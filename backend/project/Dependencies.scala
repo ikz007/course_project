@@ -16,6 +16,8 @@ object Dependencies {
   private val slf4jVersion = "1.7.32"
   private val logbackClassic = "1.2.7"
   private val pureConfigVersion = "0.17.0"
+  private val mysqlConnector = "8.0.25"
+  private val flywayVersion = "8.0.2"
 
   object Akka {
     val ActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
@@ -44,6 +46,8 @@ object Dependencies {
     val DoobieH2 = "org.tpolecat" %% "doobie-h2" % doobieVersion
     val DoobieHikari = "org.tpolecat" %% "doobie-hikari" % doobieVersion
     val DoobieSpec = "org.tpolecat" %% "doobie-specs2" % doobieVersion
+    val MySQLConnector = "mysql" % "mysql-connector-java" % mysqlConnector
+    val FlyWay = "org.flywaydb" % "flyway-core" % flywayVersion
   }
 
   object Http4s {

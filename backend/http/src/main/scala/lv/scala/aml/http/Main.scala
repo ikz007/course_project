@@ -3,6 +3,7 @@ package lv.scala.aml.http
 import cats.effect.{ExitCode, IO, IOApp}
 import lv.scala.aml.config.{Config, ServerConfig}
 import lv.scala.aml.database.Database
+import lv.scala.aml.database.dao.DaoInit
 import org.http4s.server.blaze.BlazeServerBuilder
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,7 +20,8 @@ object Main extends IOApp{
     for {
       config <- Config.load()
       xa <- IO.pure(Database.buildTransactor(Database.TransactorConfig(config.dbConfig)))
-      _ <- Database.bootstrap(xa)
+     // _ <- Database.bootstrap(xa)
+      _ <- DaoInit.initialize(xa)
       exitCode <- stream(config.serverConfig).compile.drain.map(_ => ExitCode.Success)
     } yield exitCode
 }

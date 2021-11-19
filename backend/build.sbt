@@ -39,6 +39,8 @@ lazy val database = (project in file("database"))
   .dependsOn(common % "compile->compile;test->test")
   .settings(
     libraryDependencies ++= Seq(
+      Database.MySQLConnector,
+      Database.FlyWay,
       Database.DoobieH2,
       Database.DoobieCore,
       Database.DoobieSpec,
