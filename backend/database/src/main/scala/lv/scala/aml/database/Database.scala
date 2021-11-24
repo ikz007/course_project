@@ -6,7 +6,6 @@ import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import lv.scala.aml.config.DBConfig
-import lv.scala.aml.database.dao.DaoInit
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ThreadFactory}
@@ -29,7 +28,7 @@ object Database {
     dbConfig: DBConfig,
     poolName: String = "AML-Hikari-Pool",
     driver: String = "com.mysql.cj.jdbc.Driver",
-    hikariConnectionThreads: Int = 1
+    hikariConnectionThreads: Int = 8
   ) {
     lazy val hikariDataSource = {
       val hikariConfig = new HikariConfig()
@@ -47,8 +46,8 @@ object Database {
     val connectionEC: ExecutionContext =
       ExecutionContext.fromExecutor(
         Executors.newFixedThreadPool(hikariConnectionThreads,
-        newThreadFactory("db-connection")
-      ))
+          newThreadFactory("db-connection")
+        ))
 
     val transactionEC: ExecutionContext =
       ExecutionContext.fromExecutor(
@@ -63,8 +62,8 @@ object Database {
   }
 
   def buildTransactor(
-      config: TransactorConfig
-    )(implicit cs: ContextShift[IO]): HikariTransactor[IO] =
+    config: TransactorConfig
+  )(implicit cs: ContextShift[IO]): HikariTransactor[IO] =
     HikariTransactor.apply[IO](
       config.hikariDataSource,
       config.connectionEC,
@@ -83,22 +82,4 @@ object Database {
       config.transactionBlocker
     )
   }
-
-
-//  def transactor(dbConfig: DBConfig): IO[HikariTransactor[IO]] = {
-//    val config = new HikariConfig()
-//    config.setJdbcUrl(dbConfig.url)
-//    config.setUsername(dbConfig.username)
-//    config.setPassword(dbConfig.password)
-//    config.setMaximumPoolSize(dbConfig.poolSize)
-//
-//    val execCont: ExecutionContext =
-//      ExecutionContext.fromExecutor(Executors.newFixedThreadPool(32))
-//
-//    IO.pure(HikariTransactor.apply[IO](new HikariDataSource(config), execCont))
-//  }
-
-  def bootstrap(xa: Transactor[IO]): IO[Int] = {
-    DaoInit.createDB.run.transact(xa)
-   }
 }

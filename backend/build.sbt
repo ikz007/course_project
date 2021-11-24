@@ -28,6 +28,9 @@ lazy val http = (project in file("http"))
     libraryDependencies ++= Seq(
       Cats.CatsCore,
       Cats.CatsEffect,
+      Logging.Sl4j,
+      Logging.Sl4cats,
+      Logging.Sl4core,
       Http4s.BlazeServer,
       Http4s.Dsl,
       Http4s.Circe,

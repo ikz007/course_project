@@ -15,6 +15,7 @@ object Dependencies {
   private val doobieVersion = "0.9.4"
   private val slf4jVersion = "1.7.32"
   private val logbackClassic = "1.2.7"
+  private val log4cats = "1.1.1"
   private val pureConfigVersion = "0.17.0"
   private val mysqlConnector = "8.0.25"
   private val flywayVersion = "8.0.2"
@@ -58,8 +59,10 @@ object Dependencies {
   }
 
   object Logging {
-    val Sl4j = "org.slf4j" % "slf4j-api" % slf4jVersion
+    val Sl4j = "org.slf4j" % "slf4j-simple" % slf4jVersion
+    val Sl4core = "io.chrisdavenport" %% "log4cats-core" % log4cats
     val LogBack = "ch.qos.logback" % "logback-classic" % logbackClassic
+    val Sl4cats = "io.chrisdavenport" %% "log4cats-slf4j" % log4cats
   }
 
   object PureConfig {
