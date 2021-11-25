@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS Relationships(
     FOREIGN KEY (CustomerID)
     REFERENCES Customers(CustomerID),
     FOREIGN KEY (IBAN)
-    REFERENCES Accounts(IBAN)
+    REFERENCES Account(IBAN)
 );

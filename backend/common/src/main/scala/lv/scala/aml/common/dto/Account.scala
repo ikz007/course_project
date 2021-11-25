@@ -1,12 +1,20 @@
 package lv.scala.aml.common.dto
 
-import java.util.Date
+import cats.effect.Sync
+import io.circe._, io.circe.generic.semiauto._
+import java.time.Instant
+
 
 case class Account(
   IBAN: String,
   BBAN: String,
   AccountType: String,
-  OpenDate: Date,
-  CloseDate: Date = new Date(),
+  OpenDate: Instant,
+  CloseDate: Instant,
   Status: String = "Active"
 )
+
+object Account {
+  implicit val fooDecoder: Decoder[Account] = deriveDecoder[Account]
+  implicit val fooEncoder: Encoder[Account] = deriveEncoder[Account]
+}

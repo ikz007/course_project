@@ -15,6 +15,8 @@ lazy val root = (project in file("."))
           "-feature",
           "-language:higherKinds",
           "-unchecked",
+          "-Ylog-classpath",
+          "-Ymacro-annotations",
           "-Xlint:_",
           "-Xlint:-byname-implicit"
         )
@@ -28,6 +30,7 @@ lazy val http = (project in file("http"))
     libraryDependencies ++= Seq(
       Cats.CatsCore,
       Cats.CatsEffect,
+      Database.DoobieQuill,
       Logging.Sl4j,
       Logging.Sl4cats,
       Logging.Sl4core,
@@ -48,9 +51,14 @@ lazy val database = (project in file("database"))
       Database.DoobieCore,
       Database.DoobieSpec,
       Database.DoobieHikari,
+      Database.DoobieQuill,
+      Database.Quill,
       Circe.CirceCore,
       Circe.CirceConfig,
-      Circe.CirceGeneric
+      Circe.CirceGeneric,
+      Logging.Sl4j,
+      Logging.Sl4cats,
+      Logging.Sl4core
     )
   )
 
@@ -60,7 +68,8 @@ lazy val common = (project in file("common"))
       Circe.CirceCore,
       Circe.CirceConfig,
       Circe.CirceGeneric,
-      Cats.CatsEffect
+      Cats.CatsEffect,
+      Http4s.Circe
     )
   )
 

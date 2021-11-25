@@ -3,8 +3,6 @@ package lv.scala.aml.database
 import cats.effect._
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import doobie.hikari.HikariTransactor
-import doobie.implicits._
-import doobie.util.transactor.Transactor
 import lv.scala.aml.config.DBConfig
 
 import java.util.concurrent.atomic.AtomicInteger
