@@ -1,6 +1,9 @@
 package lv.scala.aml.common.dto
 
-import java.util.Date
+import io.circe._
+import io.circe.generic.semiauto._
+
+import java.time.Instant
 
 case class Customer(
   CustomerID: String,
@@ -8,8 +11,13 @@ case class Customer(
   BusinessType: String,
   MonthlyIncome: BigDecimal,
   Status: String = "Active",
-  BirthDate: Date,
+  BirthDate: Instant,
   PEP: Boolean = false,
   CountryOfBirth: String,
   CountryOfResidence: String
 )
+
+object Customer {
+  implicit val fooDecoder: Decoder[Customer] = deriveDecoder[Customer]
+  implicit val fooEncoder: Encoder[Customer] = deriveEncoder[Customer]
+}

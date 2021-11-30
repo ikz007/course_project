@@ -1,9 +1,8 @@
 package lv.scala.aml.database
 
 import doobie.quill.DoobieContext.MySQL
-import io.getquill.{CamelCase, EntityQuery, MappedEncoding}
+import io.getquill.{CamelCase, MappedEncoding}
 import io.getquill.context.jdbc.{Decoders, Encoders}
-import lv.scala.aml.common.dto.Account
 
 import java.time.Instant
 import java.util.Date

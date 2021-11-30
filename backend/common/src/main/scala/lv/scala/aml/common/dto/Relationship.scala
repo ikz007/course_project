@@ -1,10 +1,19 @@
 package lv.scala.aml.common.dto
 
-import java.util.Date
+import io.circe._
+import io.circe.generic.semiauto._
+
+import java.time.Instant
 
 case class Relationship(
-  CustomerID: BigInt,
+  RelationshipID: String,
+  CustomerID: String,
   IBAN: String,
-  StartDate: Date,
-  EndDate: Date
+  StartDate: Instant,
+  EndDate: Instant
 )
+
+object Relationship {
+  implicit val fooDecoder: Decoder[Relationship] = deriveDecoder[Relationship]
+  implicit val fooEncoder: Encoder[Relationship] = deriveEncoder[Relationship]
+}

@@ -1,6 +1,5 @@
 package lv.scala.aml.common.dto
 
-import cats.effect.Sync
 import io.circe._, io.circe.generic.semiauto._
 import java.time.Instant
 

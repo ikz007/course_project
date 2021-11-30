@@ -9,14 +9,13 @@ import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.getquill.CamelCase
 import io.getquill.context.jdbc.{Decoders, Encoders}
+import cats.syntax.all._
 import lv.scala.aml.config.{Config, ServerConfig}
-import lv.scala.aml.database.repository.interpreter.AccountRepositoryInterpreter
+import lv.scala.aml.database.repository.interpreter.{AccountRepositoryInterpreter, CountryRepositoryInterpreter, CustomerRepositoryInterpreter, QuestionnaireRepositoryInterpreter, RelationshipRepositoryInterpreter, TransactionRepositoryInterpreter}
 import lv.scala.aml.database.{Database, DbInit}
-import lv.scala.aml.http.routes.AccountRoutes
-import lv.scala.aml.http.services.AccountService
-import org.http4s.{HttpRoutes, Request, Response}
+import lv.scala.aml.http.services.{AccountService, CountryService, CustomerService, QuestionnaireService, RelationshipService, TransactionService}
+import org.http4s.{Request, Response}
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
-import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,8 +33,20 @@ object Main extends IOApp{
   def makeRouter(transactor: HikariTransactor[IO]): Kleisli[IO, Request[IO], Response[IO]] =
     {
       val accountInterpreter: AccountRepositoryInterpreter[IO] = new AccountRepositoryInterpreter[IO](transactor, ctx)
-      val accountService: AccountService[IO] = new AccountService[IO](accountInterpreter)
-      (new AccountRoutes[IO](accountService).routes).orNotFound
+      val countryInterpreter: CountryRepositoryInterpreter[IO] = new CountryRepositoryInterpreter[IO](transactor, ctx)
+      val questionnaireIntepreter: QuestionnaireRepositoryInterpreter[IO] = new QuestionnaireRepositoryInterpreter[IO](transactor, ctx)
+      val relationshipInterpreter: RelationshipRepositoryInterpreter[IO] = new RelationshipRepositoryInterpreter[IO](transactor, ctx)
+      val transactionInterpreter: TransactionRepositoryInterpreter[IO] = new TransactionRepositoryInterpreter[IO](transactor, ctx)
+      val customerInterpreter: CustomerRepositoryInterpreter[IO] = new CustomerRepositoryInterpreter[IO](transactor, ctx)
+
+      val accountRoutes = AccountService[IO](accountInterpreter).routes
+      val countryRoutes = CountryService[IO](countryInterpreter).routes
+      val questionaireRoutes = QuestionnaireService[IO](questionnaireIntepreter).routes
+      val relationshipRoutes = RelationshipService[IO](relationshipInterpreter).routes
+      val transactionRoutes = TransactionService[IO](transactionInterpreter).routes
+      val customerRoutes = CustomerService[IO](customerInterpreter).routes
+
+      (accountRoutes <+> countryRoutes <+> questionaireRoutes <+> relationshipRoutes <+> transactionRoutes <+> customerRoutes).orNotFound
     }
   // routes.orNotFound
 

@@ -1,4 +1,4 @@
-INSERT INTO Countries (CountryISO, CountryName) VALUES
+INSERT INTO Country(CountryISO, CountryName) VALUES
 ('00', 'Unknown'),
 ('AF', 'Afghanistan'),
 ('AX', 'Aland Islands'),
