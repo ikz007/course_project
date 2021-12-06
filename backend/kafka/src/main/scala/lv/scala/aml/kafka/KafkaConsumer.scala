@@ -6,9 +6,7 @@ import cats.implicits._
 import fs2.{Chunk, Stream}
 import fs2.kafka.{ConsumerSettings, _}
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import io.circe.generic.codec.DerivedAsObjectCodec.deriveCodec
 import lv.scala.aml.config.KafkaConfig
-import lv.scala.aml.kafka.Serdes.decodingSer
 
 import scala.concurrent.duration._
 trait KafkaConsumer[F[_],A] {
@@ -37,13 +35,15 @@ object KafkaConsumer {
       .withAutoOffsetReset(AutoOffsetReset.Earliest)
 }
 
-private class KafkaConsumerImpl[F[_]: ConcurrentEffect : ContextShift : Timer, A](
+class KafkaConsumerImpl[F[_]: ConcurrentEffect : ContextShift : Timer, A](
   consumer: fs2.kafka.KafkaConsumer[F, Unit, Serdes.Attempt[KafkaMessage[A]]],
   maxPerBatch: Int = 5,
   batchTime: FiniteDuration = 5.seconds
 ) extends KafkaConsumer[F, A] {
   private val logger = Slf4jLogger.getLogger[F]
 
+
+  // publish errors to error stream
   def stream: Stream[F, Chunk[(KafkaMessage[A], CommittableOffset[F])]] =
     consumer.stream.evalTap { msg =>
       logger.info(s"Processing message from the topic ${msg.record.topic}")
@@ -53,4 +53,7 @@ private class KafkaConsumerImpl[F[_]: ConcurrentEffect : ContextShift : Timer, A
       case Left(err) => logger.error(err)(s"Failed to import the business object...")
       case Right((msg, _)) => logger.info(s"Business object was successfully parsed $msg.")
     }.rethrow.groupWithin(maxPerBatch, batchTime)
+      .handleErrorWith{ err =>
+        Stream.eval(logger.info("Error has occured while processing kafka consumer")) >> stream
+      }
 }

@@ -9,7 +9,6 @@ import io.circe.syntax._
 import java.nio.ByteBuffer
 
 // custom Encoder/Decoder for types not supported by fs2.kafka
-// ToDo: Answer to question: If its really necessary to use custom parsers or should CirceSerdes be usd from com.goyeau.kafka library?
 object Serdes {
   type Attempt[T] = Either[Throwable, T]
 
