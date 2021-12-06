@@ -10,7 +10,7 @@
 /backend/common/target/
 /backend/database/target/
 /backend/http/target/
-
+/backend/kafka/target/
 .idea
 
 .vscode

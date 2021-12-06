@@ -19,6 +19,6 @@ case class Transaction (
 )
 
 object Transaction {
-  implicit val fooDecoder: Decoder[Transaction] = deriveDecoder[Transaction]
-  implicit val fooEncoder: Encoder[Transaction] = deriveEncoder[Transaction]
+  implicit val transactionDecoder: Decoder[Transaction] = deriveDecoder[Transaction]
+  implicit val transactionEncoder: Encoder[Transaction] = deriveEncoder[Transaction]
 }

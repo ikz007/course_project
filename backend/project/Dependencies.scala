@@ -10,6 +10,7 @@ object Dependencies {
   private val http4sVersion = "0.21.25"
   private val scalaTestVersion = "3.2.10"
   private val scalaMockVersion = "5.1.0"
+  private val kafkaVersion = "1.8.0"
   private val circeVersion = "0.14.1"
   private val circeConfig = "0.8.0"
   private val doobieVersion = "0.9.4"
@@ -20,6 +21,7 @@ object Dependencies {
   private val mysqlConnector = "8.0.25"
   private val flywayVersion = "8.0.2"
   private val quillVersion = "3.5.2"
+  private val kafkaAvroVersion = "7.0.0"
 
   object Akka {
     val ActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
@@ -59,6 +61,12 @@ object Dependencies {
     val BlazeClient = "org.http4s" %% "http4s-blaze-client" % http4sVersion
     val Circe = "org.http4s" %% "http4s-circe" % http4sVersion
     val Dsl = "org.http4s" %% "http4s-dsl" % http4sVersion
+  }
+
+  object Kafka {
+    val fs2Kafka = "com.github.fd4s" %% "fs2-kafka" % kafkaVersion
+    val fs2KafkaVulkan = "com.github.fd4s" %% "fs2-kafka-vulcan" % kafkaVersion
+    val kafkaAvro = "io.confluent" % "kafka-avro-serializer" % kafkaAvroVersion
   }
 
   object Logging {

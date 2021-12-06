@@ -2,7 +2,7 @@ import Dependencies._
 
 lazy val root = (project in file("."))
   .aggregate(
-    http,
+    http,database, common
   )
   .settings(
     name := "scala-aml",
@@ -42,7 +42,7 @@ lazy val http = (project in file("http"))
   )
 
 lazy val database = (project in file("database"))
-  .dependsOn(common % "compile->compile;test->test")
+  .dependsOn(common % "compile->compile;test->test", kafka % "compile->compile;test->test")
   .settings(
     libraryDependencies ++= Seq(
       Database.MySQLConnector,
@@ -70,6 +70,22 @@ lazy val common = (project in file("common"))
       Circe.CirceGeneric,
       Cats.CatsEffect,
       Http4s.Circe
+    )
+  )
+
+lazy val kafka = (project in file("kafka"))
+  .dependsOn(common % "compile->compile;test->test")
+  .settings(
+    libraryDependencies ++=Seq(
+      Kafka.fs2Kafka,
+      Cats.CatsCore,
+      Cats.CatsEffect,
+      Database.DoobieQuill,
+      Logging.Sl4j,
+      Logging.Sl4cats,
+      Logging.Sl4core
+//      Kafka.fs2KafkaVulkan,
+//      Kafka.kafkaAvro
     )
   )
 

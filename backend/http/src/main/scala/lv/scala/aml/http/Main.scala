@@ -12,7 +12,7 @@ import io.getquill.context.jdbc.{Decoders, Encoders}
 import cats.syntax.all._
 import lv.scala.aml.config.{Config, ServerConfig}
 import lv.scala.aml.database.repository.interpreter.{AccountRepositoryInterpreter, CountryRepositoryInterpreter, CustomerRepositoryInterpreter, QuestionnaireRepositoryInterpreter, RelationshipRepositoryInterpreter, TransactionRepositoryInterpreter}
-import lv.scala.aml.database.{Database, DbInit}
+import lv.scala.aml.database.{Database, DbInit, TransactionTopicSubscriber}
 import lv.scala.aml.http.services.{AccountService, CountryService, CustomerService, QuestionnaireService, RelationshipService, TransactionService}
 import org.http4s.{Request, Response}
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
@@ -64,6 +64,7 @@ object Main extends IOApp{
       xa <- IO.pure(Database.buildTransactor(Database.TransactorConfig(config.dbConfig)))
      // _ <- Database.bootstrap(xa)
       _ <- DbInit.initialize(xa)
+      _ <- TransactionTopicSubscriber[IO](config.kafkaConfig)
       exitCode <- stream(config.serverConfig, xa).compile.drain.map(_ => ExitCode.Success)
     } yield exitCode
 }
