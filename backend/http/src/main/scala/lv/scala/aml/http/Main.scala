@@ -13,9 +13,10 @@ import lv.scala.aml.config.{Config, KafkaConfig, ServerConfig}
 import lv.scala.aml.database.repository.interpreter.{AccountRepositoryInterpreter, CountryRepositoryInterpreter, CustomerRepositoryInterpreter, QuestionnaireRepositoryInterpreter, RelationshipRepositoryInterpreter, TransactionRepositoryInterpreter}
 import lv.scala.aml.database.{Database, DbInit, TransactionTopicSubscriber}
 import lv.scala.aml.http.services.{AccountService, CountryService, CustomerService, QuestionnaireService, RelationshipService, TransactionService}
-import org.http4s.{Request, Response}
+import org.http4s.{HttpRoutes, Request, Response}
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.middleware.{CORS, CORSConfig}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -45,7 +46,7 @@ object Main extends IOApp{
       val transactionRoutes = TransactionService[IO](transactionInterpreter).routes
       val customerRoutes = CustomerService[IO](customerInterpreter).routes
 
-      (accountRoutes <+> countryRoutes <+> questionaireRoutes <+> relationshipRoutes <+> transactionRoutes <+> customerRoutes).orNotFound
+      withCors(accountRoutes <+> countryRoutes <+> questionaireRoutes <+> relationshipRoutes <+> transactionRoutes <+> customerRoutes).orNotFound
     }
   // routes.orNotFound
 
@@ -58,6 +59,19 @@ object Main extends IOApp{
       .serve
       .concurrently(listener.subscribe)
       .compile
+
+  def withCors(svc: HttpRoutes[IO]): HttpRoutes[IO] =
+    CORS(
+      svc,
+      CORSConfig(
+        anyOrigin = true,
+        anyMethod = false,
+        allowedMethods = Some(Set("GET", "POST", "PUT", "HEAD", "OPTIONS")),
+        allowedHeaders = Some(Set("*")),
+        allowCredentials = true,
+        maxAge = 1800
+      )
+    )
 
   // ToDo: auto populate DB, run  API
   override def run(args: List[String]): IO[ExitCode] =

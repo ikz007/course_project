@@ -59,10 +59,9 @@ class TransactionTopicSubscriber[F[_]: Sync](
             query[Transaction].insert(t)
           }
         }.transact(xa).map{s => s.length}.handleErrorWith{err =>
-        // post to kafka error topic
-        logger.info(s"Failed to insert transaction in DB, ${err.getMessage}") *> Sync[F].pure(0)
+        logger.info(s"Failed to insert transaction in DB, ${err.getMessage}")  *> Sync[F].pure(0)
       }
-
+//*> kafkaErrorProducer.produceOne(KafkaErrorMessage(err.getMessage, ""))
   }
 }
 
@@ -71,8 +70,8 @@ object TransactionTopicSubscriber {
     xa: HikariTransactor[F],
     kafkaConfig: KafkaConfig,
   ): Resource[F, TransactionTopicSubscriber[F]] = for {
-    transactionConsumer <- KafkaConsumer.apply[F, Transaction](kafkaConfig)
     trnsErrorProducer <- KafkaErrorProducer.apply[F, KafkaErrorMessage](kafkaConfig)
+    transactionConsumer <- KafkaConsumer.apply[F, Transaction](kafkaConfig, trnsErrorProducer)
   } yield new TransactionTopicSubscriber[F](xa, transactionConsumer, trnsErrorProducer,new MySQL[CamelCase](CamelCase) with Decoders with Encoders)
 
 

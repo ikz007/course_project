@@ -11,6 +11,7 @@ import lv.scala.aml.kafka.Serdes.encodingSer
 
 trait KafkaErrorProducer[F[_],A] {
   def produce(messages: List[KafkaMessage[A]]): F[Unit]
+  def produceOne(message: KafkaMessage[A]): F[Unit]
 }
 
 object KafkaErrorProducer {
@@ -45,4 +46,10 @@ class KafkaErrorProducerImpl[F[_]: ConcurrentEffect : ContextShift : Timer, A](
       _ <- prdc // get rid of IO
     } yield ()
   }
+
+  override def produceOne(message: KafkaMessage[A]): F[Unit] = for {
+    _ <- logger.info(s"Submitting error message to ${kafkaConfig.producerTopic}")
+    prdc <- producer.produceOne_(ProducerRecord(kafkaConfig.producerTopic, (), message))
+    _ <- prdc
+  } yield ()
 }
