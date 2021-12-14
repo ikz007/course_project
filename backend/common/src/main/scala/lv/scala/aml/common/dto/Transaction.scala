@@ -10,7 +10,7 @@ case class Transaction (
   TheirIBAN: String,
   Reference: String,
   TransactionCode: String,
-  BookingDateTime: String,
+  BookingDateTime: Instant,
   DebitCredit: String,
   Amount: BigDecimal,
   Currency: String,

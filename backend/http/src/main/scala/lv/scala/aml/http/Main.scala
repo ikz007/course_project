@@ -9,10 +9,11 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.getquill.CamelCase
 import io.getquill.context.jdbc.{Decoders, Encoders}
 import cats.syntax.all._
+import lv.scala.aml.common.dto.scenario.ScenarioConfiguration
 import lv.scala.aml.config.{Config, KafkaConfig, ServerConfig}
-import lv.scala.aml.database.repository.interpreter.{AccountRepositoryInterpreter, CountryRepositoryInterpreter, CustomerRepositoryInterpreter, QuestionnaireRepositoryInterpreter, RelationshipRepositoryInterpreter, TransactionRepositoryInterpreter}
-import lv.scala.aml.database.{Database, DbInit, TransactionTopicSubscriber}
-import lv.scala.aml.http.services.{AccountService, CountryService, CustomerService, QuestionnaireService, RelationshipService, TransactionService}
+import lv.scala.aml.database.repository.interpreter.{AccountRepositoryInterpreter, AlertRepositoryInterpreter, CountryRepositoryInterpreter, CustomerRepositoryInterpreter, QuestionnaireRepositoryInterpreter, RelationshipRepositoryInterpreter, TransactionRepositoryInterpreter}
+import lv.scala.aml.database.{Database, DbInit, ScenarioConfigRetriever, TransactionTopicSubscriber}
+import lv.scala.aml.http.services.{AccountService, AlertService, CountryService, CustomerService, QuestionnaireService, RelationshipService, TransactionService}
 import org.http4s.{HttpRoutes, Request, Response}
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -38,6 +39,7 @@ object Main extends IOApp{
       val relationshipInterpreter: RelationshipRepositoryInterpreter[IO] = new RelationshipRepositoryInterpreter[IO](transactor, ctx)
       val transactionInterpreter: TransactionRepositoryInterpreter[IO] = new TransactionRepositoryInterpreter[IO](transactor, ctx)
       val customerInterpreter: CustomerRepositoryInterpreter[IO] = new CustomerRepositoryInterpreter[IO](transactor, ctx)
+      val alertInterpreter: AlertRepositoryInterpreter[IO] = new AlertRepositoryInterpreter[IO](transactor, ctx)
 
       val accountRoutes = AccountService[IO](accountInterpreter).routes
       val countryRoutes = CountryService[IO](countryInterpreter).routes
@@ -45,14 +47,15 @@ object Main extends IOApp{
       val relationshipRoutes = RelationshipService[IO](relationshipInterpreter).routes
       val transactionRoutes = TransactionService[IO](transactionInterpreter).routes
       val customerRoutes = CustomerService[IO](customerInterpreter).routes
+      val alertRoutes = AlertService[IO](alertInterpreter).routes
 
-      withCors(accountRoutes <+> countryRoutes <+> questionaireRoutes <+> relationshipRoutes <+> transactionRoutes <+> customerRoutes).orNotFound
+      withCors(accountRoutes <+> countryRoutes <+> questionaireRoutes <+> relationshipRoutes <+> transactionRoutes <+> customerRoutes <+> alertRoutes).orNotFound
     }
   // routes.orNotFound
 
-  def stream(serverConfig: ServerConfig, kafka: KafkaConfig, transactor: HikariTransactor[IO]) =
+  def stream(serverConfig: ServerConfig, scenarioConfig: ScenarioConfiguration, kafka: KafkaConfig, transactor: HikariTransactor[IO]) =
     for {
-      listener <- TransactionTopicSubscriber[IO](transactor, kafka)
+      listener <- TransactionTopicSubscriber[IO](transactor, kafka, scenarioConfig)
     } yield BlazeServerBuilder[IO](global)
       .bindHttp(serverConfig.port, serverConfig.host)
       .withHttpApp(makeRouter(transactor))
@@ -81,6 +84,7 @@ object Main extends IOApp{
       xa <- IO.pure(Database.buildTransactor(Database.TransactorConfig(config.dbConfig)))
      // _ <- Database.bootstrap(xa)
       _ <- DbInit.initialize[IO](xa)
-      exitCode <- stream(config.serverConfig, config.kafkaConfig, xa).use(_.lastOrError) //.compile.drain.map(_ => ExitCode.Success)
+      scenarioSettings <- ScenarioConfigRetriever(xa).retrieveConfiguration
+      exitCode <- stream(config.serverConfig, scenarioSettings, config.kafkaConfig, xa).use(_.lastOrError) //.compile.drain.map(_ => ExitCode.Success)
     } yield exitCode
 }
