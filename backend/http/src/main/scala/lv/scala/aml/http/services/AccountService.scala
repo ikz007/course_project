@@ -12,6 +12,7 @@ import org.http4s.dsl.Http4sDsl
 class AccountService[F[_]: Sync](
   accountInterpreter: AccountRepositoryInterpreter[F]
 ) extends Http4sDsl[F] {
+  //why extend Http4sDsl ???
   private def get: F[List[Account]] = accountInterpreter.get
   private def getById(iban: String): OptionT[F, Account] = accountInterpreter.getById(iban)
   private def update(account: Account): F[String] = accountInterpreter.update(account)

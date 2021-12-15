@@ -25,7 +25,7 @@ object Database {
   final case class TransactorConfig(
     dbConfig: DBConfig,
     poolName: String = "AML-Hikari-Pool",
-    driver: String = "com.mysql.cj.jdbc.Driver",
+    driver: String = "com.mysql.cj.jdbc.Driver", //why not from config?
     hikariConnectionThreads: Int = 8
   ) {
     lazy val hikariDataSource = {

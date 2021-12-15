@@ -15,6 +15,7 @@ case class KafkaConfig(bootstrapServers: String, consumerTopic: String, producer
 object Config {
   def load(): IO[Config] =
     for {
+      //parse config once
       dbConf <- parser.decodePathF[IO, DBConfig]("db")
       serverConf <- parser.decodePathF[IO, ServerConfig]("server")
       kafkaConf <- parser.decodePathF[IO, KafkaConfig]("kafka")

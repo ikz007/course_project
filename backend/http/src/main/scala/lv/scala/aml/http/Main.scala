@@ -83,4 +83,11 @@ object Main extends IOApp{
       _ <- DbInit.initialize[IO](xa)
       exitCode <- stream(config.serverConfig, config.kafkaConfig, xa).use(_.lastOrError) //.compile.drain.map(_ => ExitCode.Success)
     } yield exitCode
+
+
+  // load config
+  // initialize dbs
+  // create checker
+  // start https
+  // start kafka receiver
 }

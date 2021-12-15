@@ -60,6 +60,7 @@ class TransactionTopicSubscriber[F[_]: Sync](
           }
         }.transact(xa).map{s => s.length}.handleErrorWith{err =>
         logger.info(s"Failed to insert transaction in DB, ${err.getMessage}")  *> Sync[F].pure(0)
+        // why return 0 ?
       }
 //*> kafkaErrorProducer.produceOne(KafkaErrorMessage(err.getMessage, ""))
   }

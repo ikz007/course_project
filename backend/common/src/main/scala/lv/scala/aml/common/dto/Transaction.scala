@@ -5,8 +5,13 @@ import io.circe.generic.semiauto._
 
 import java.time.Instant
 
+
+// Lets use correct types. For instance BookingDateTime:LocalDateTime, for IBANS create case class that contains IBAN number
+// One functionality that you could add is datatype validation during parsing/ object creation
+
+case class IBAN(value:String)
 case class Transaction (
-  OurIBAN: String,
+  OurIBAN: IBAN,
   TheirIBAN: String,
   Reference: String,
   TransactionCode: String,

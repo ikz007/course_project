@@ -20,7 +20,8 @@ object KafkaConsumer {
     kafkaErrorProducer: KafkaErrorProducer[F, KafkaErrorMessage]
   )(implicit d: Deserializer[F, Either[Throwable, KafkaMessage[A]]]
   ): Resource[F, KafkaConsumerImpl[F, A]] =
-    fs2.kafka.KafkaConsumer.resource(consumerSettings[F, Unit, Serdes.Attempt[KafkaMessage[A]]](kafkaConfig)).evalMap{ c =>
+    fs2.kafka.KafkaConsumer.resource(consumerSettings[F, Unit, Serdes.Attempt[KafkaMessage[A]]](kafkaConfig))
+      .evalMap{ c =>
       c.subscribeTo(kafkaConfig.consumerTopic).as {
                 new KafkaConsumerImpl(c, kafkaErrorProducer = kafkaErrorProducer)
       }
@@ -49,10 +50,12 @@ class KafkaConsumerImpl[F[_]: ConcurrentEffect : ContextShift : Timer, A](
   // publish errors to error stream
   def stream: Stream[F, Chunk[(KafkaMessage[A], CommittableOffset[F])]] =
     consumer.stream.evalTap { msg =>
+      //set to debug
       logger.info(s"Processing message from the topic ${msg.record.topic}")
     }.map{ msg =>
       msg.record.value.map(_ -> msg.offset)
     }.evalTap {
+            //todo:
           // how to publish failed message to the Kafka Error topic?
       case Left(err) => logger.error(err)(s"Failed to import the business object...")
       case Right((msg, _)) => logger.info(s"Business object was successfully parsed $msg.")

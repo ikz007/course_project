@@ -5,18 +5,20 @@ import cats.effect.Sync
 import doobie.hikari.HikariTransactor
 import doobie.quill.DoobieContext.MySQL
 import io.chrisdavenport.log4cats.Logger
-import io.getquill.{CamelCase}
+import io.getquill.CamelCase
 import io.getquill.context.jdbc.{Decoders, Encoders}
 import lv.scala.aml.common.dto.Account
-import lv.scala.aml.database.repository.AccountRepository
+import lv.scala.aml.database.repository.{AccountRepository, BussinessObjectRepository}
 import doobie.implicits._
 import cats.syntax.all._
 import lv.scala.aml.database.Schema
 
+//why interpreter maybe better call this implementations ?
+// why need trait AccountRepository at all ?
 class AccountRepositoryInterpreter[F[_]: Sync: Logger](
   xa: HikariTransactor[F],
   override val ctx: MySQL[CamelCase] with Decoders with Encoders
-) extends AccountRepository[F] with Schema{
+) extends BussinessObjectRepository[F, Account] with Schema{
   import ctx._
 
   def get: F[List[Account]] = run(quote {
