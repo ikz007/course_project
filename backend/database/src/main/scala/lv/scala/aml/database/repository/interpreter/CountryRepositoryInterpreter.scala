@@ -28,10 +28,10 @@ class CountryRepositoryInterpreter [F[_]: Sync: Logger](
       query[Country].filter(_.CountryISO == lift(countryISO))
     }).transact(xa).map(_.headOption))
 
-  override def update(country: Country): F[String] =
+  override def update(country: Country): F[Unit] =
     run(quote {
       query[Country]
         .filter(_.CountryISO == lift(country.CountryISO))
         .update(lift(country))
-    }).transact(xa).as(country.CountryISO)
+    }).transact(xa).void
 }

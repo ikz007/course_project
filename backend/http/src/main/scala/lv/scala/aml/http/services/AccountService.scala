@@ -4,7 +4,7 @@ import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.all._
 import io.circe.syntax._
-import lv.scala.aml.common.dto.Account
+import lv.scala.aml.common.dto.{Account, IBAN}
 import lv.scala.aml.database.repository.interpreter.AccountRepositoryInterpreter
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec.{circeEntityDecoder, circeEntityEncoder}
@@ -13,8 +13,8 @@ class AccountService[F[_]: Sync](
   accountInterpreter: AccountRepositoryInterpreter[F]
 ) extends Http4sDsl[F] {
   private def get: F[List[Account]] = accountInterpreter.get
-  private def getById(iban: String): OptionT[F, Account] = accountInterpreter.getById(iban)
-  private def update(account: Account): F[String] = accountInterpreter.update(account)
+  private def getById(iban: IBAN): OptionT[F, Account] = accountInterpreter.getById(iban)
+  private def update(account: Account): F[Unit] = accountInterpreter.update(account)
 
   // create response models
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
@@ -23,7 +23,7 @@ class AccountService[F[_]: Sync](
       case Nil => NotFound()
       }
     case _ @ GET -> Root / "accounts" / id =>
-      getById(id).value.flatMap {
+      getById(IBAN(id)).value.flatMap {
         case Some(account) => Ok(account.asJson)
         case None => NotFound("Such account does not exist")
       }

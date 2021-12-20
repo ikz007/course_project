@@ -28,12 +28,12 @@ class QuestionnaireRepositoryInterpreter[F[_]: Sync: Logger](
     query[Questionnaire]
   }).transact(xa)
 
-  override def update(model: Questionnaire): F[String] =
+  override def update(model: Questionnaire): F[Unit] =
     run(quote {
       query[Questionnaire]
         .filter(_.QuestionnaireID == lift(model.QuestionnaireID))
         .update(lift(model))
-    }).transact(xa).as(model.QuestionnaireID)
+    }).transact(xa).void
 
   override def getByCustomerID(customerID: String): F[List[Questionnaire]] =
     run(quote {

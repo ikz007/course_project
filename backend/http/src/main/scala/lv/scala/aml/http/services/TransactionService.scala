@@ -3,7 +3,7 @@ import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.all._
 import io.circe.syntax._
-import lv.scala.aml.common.dto.Transaction
+import lv.scala.aml.common.dto.{IBAN, Transaction}
 import lv.scala.aml.database.repository.interpreter.TransactionRepositoryInterpreter
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec.{circeEntityDecoder, circeEntityEncoder}
@@ -15,7 +15,7 @@ class TransactionService[F[_]: Sync](
   private def getById(reference: String): OptionT[F, Transaction] = transactionRepositoryInterpreter.getById(reference)
   //private def update(transaction: Transaction): F[String] = transactionRepositoryInterpreter.update(transaction)
   private def getCustomerTransactions(customerID: String): F[List[Transaction]] = transactionRepositoryInterpreter.getCustomerTransactions(customerID)
-  private def getAccountTransactions(IBAN: String): F[List[Transaction]] = transactionRepositoryInterpreter.getAccountTransactions(IBAN)
+  private def getAccountTransactions(iban: IBAN): F[List[Transaction]] = transactionRepositoryInterpreter.getAccountTransactions(iban)
   // create response models
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case _ @ GET -> Root / "transactions" / "all" =>
@@ -30,7 +30,7 @@ class TransactionService[F[_]: Sync](
       }
 
     case _ @ GET -> Root / "transactions" / "account" / iban =>
-      getAccountTransactions(iban).flatMap { case list => Ok(list.asJson)
+      getAccountTransactions(IBAN(iban)).flatMap { case list => Ok(list.asJson)
       case Nil => NotFound()
       }
     case _ @ GET -> Root / "transactions" / id =>

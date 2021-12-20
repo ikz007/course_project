@@ -25,13 +25,12 @@ object Database {
   final case class TransactorConfig(
     dbConfig: DBConfig,
     poolName: String = "AML-Hikari-Pool",
-    driver: String = "com.mysql.cj.jdbc.Driver",
     hikariConnectionThreads: Int = 8
   ) {
     lazy val hikariDataSource = {
       val hikariConfig = new HikariConfig()
       hikariConfig.setJdbcUrl(dbConfig.url)
-      hikariConfig.setDriverClassName(driver)
+      hikariConfig.setDriverClassName(dbConfig.driver)
       hikariConfig.setUsername(dbConfig.username)
       hikariConfig.setPassword(dbConfig.password)
       hikariConfig.setMaximumPoolSize(dbConfig.poolSize)
@@ -72,7 +71,7 @@ object Database {
     config: TransactorConfig
   )(implicit cs: ContextShift[IO]) = {
     HikariTransactor.newHikariTransactor[IO](
-      config.driver,
+      config.dbConfig.driver,
       config.dbConfig.url,
       config.dbConfig.username,
       config.dbConfig.password,

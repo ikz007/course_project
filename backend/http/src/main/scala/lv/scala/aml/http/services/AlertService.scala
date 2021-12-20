@@ -11,12 +11,13 @@ import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebSocketFrame
+import fs2.Stream
 
 class AlertService[F[_]: Sync : Concurrent](
   alertRepo: AlertRepositoryInterpreter[F]
 ) extends Http4sDsl[F] {
   private def get: F[List[Alert]] = alertRepo.get
-
+  private def getStream: Stream[F, Alert] = alertRepo.getStream
   private def getById(id: Int): OptionT[F, Alert] = alertRepo.getById(id)
 
   val routes: HttpRoutes[F] =
@@ -27,7 +28,7 @@ class AlertService[F[_]: Sync : Concurrent](
         }
       case GET -> Root / "alerts" / "subscribe" =>
         WebSocketBuilder[F].build(
-          send = alertRepo.getStream.map(_.asJson.toString()).map(WebSocketFrame.Text(_)),
+          send = getStream.take(5).map(_.asJson.toString()).map(WebSocketFrame.Text(_)),
           receive = stream => stream.drain
         )
     }

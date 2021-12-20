@@ -4,7 +4,7 @@ import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.all._
 import io.circe.syntax._
-import lv.scala.aml.common.dto.{Account, Customer, Relationship}
+import lv.scala.aml.common.dto.{Account, Customer, IBAN, Relationship}
 import lv.scala.aml.database.repository.interpreter.RelationshipRepositoryInterpreter
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec.{circeEntityDecoder, circeEntityEncoder}
@@ -14,10 +14,10 @@ class RelationshipService[F[_]: Sync](
   relationshipRepositoryInterpreter: RelationshipRepositoryInterpreter[F]
 ) extends Http4sDsl[F] {
   private def get: F[List[Relationship]] = relationshipRepositoryInterpreter.get
-  private def getById(iban: String): OptionT[F, Relationship] = relationshipRepositoryInterpreter.getById(iban)
-  private def update(account: Relationship): F[String] = relationshipRepositoryInterpreter.update(account)
+  private def getById(relID: String): OptionT[F, Relationship] = relationshipRepositoryInterpreter.getById(relID)
+  private def update(rel: Relationship): F[Unit] = relationshipRepositoryInterpreter.update(rel)
   private def getRelatedAccounts(customerID: String): F[List[Account]] = relationshipRepositoryInterpreter.getRelatedAccounts(customerID)
-  private def getRelatedCustomers(IBAN: String): F[List[Customer]] = relationshipRepositoryInterpreter.getRelatedCustomers(IBAN)
+  private def getRelatedCustomers(IBAN: IBAN): F[List[Customer]] = relationshipRepositoryInterpreter.getRelatedCustomers(IBAN)
 
   // create response models
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
@@ -36,7 +36,7 @@ class RelationshipService[F[_]: Sync](
         case Nil => NotFound()
       }
     case _ @ GET -> Root / "relationships" / "account" / iban =>
-      getRelatedCustomers(iban).flatMap {
+      getRelatedCustomers(IBAN(iban)).flatMap {
         case list => Ok(list.asJson)
         case Nil => NotFound()
       }

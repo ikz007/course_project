@@ -13,8 +13,8 @@ class CountryService[F[_]: Sync](
   countryRepositoryInterpreter: CountryRepositoryInterpreter[F]
 ) extends Http4sDsl[F] {
   private def get: F[List[Country]] = countryRepositoryInterpreter.get
-  private def getById(iban: String): OptionT[F, Country] = countryRepositoryInterpreter.getById(iban)
-  private def update(account: Country): F[String] = countryRepositoryInterpreter.update(account)
+  private def getById(countryISO: String): OptionT[F, Country] = countryRepositoryInterpreter.getById(countryISO)
+  private def update(country: Country): F[Unit] = countryRepositoryInterpreter.update(country)
 
   // create response models
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {

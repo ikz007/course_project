@@ -3,6 +3,7 @@ package lv.scala.aml.database.repository.interpreter
 //import cats.Applicative
 import cats.data.OptionT
 import cats.effect.Sync
+import lv.scala.aml.common.dto.IBAN
 //import cats.effect.{ConcurrentEffect, ContextShift, Resource, Sync, Timer}
 import doobie.hikari.HikariTransactor
 import doobie.quill.DoobieContext.MySQL
@@ -34,9 +35,9 @@ class TransactionRepositoryInterpreter [F[_]: Sync](
       .map{ case (transaction, _) => transaction}
   }).transact(xa)
 
-  override def getAccountTransactions(IBAN: String): F[List[Transaction]] = run(quote {
+  override def getAccountTransactions(iban: IBAN): F[List[Transaction]] = run(quote {
     query[Transaction]
-      .filter(_.OurIBAN == lift(IBAN))
+      .filter(_.OurIBAN == lift(iban))
   }).transact(xa)
 
   override def get: F[List[Transaction]] = run(quote {
@@ -48,11 +49,11 @@ class TransactionRepositoryInterpreter [F[_]: Sync](
       query[Transaction].filter(_.Reference == lift(id))
     }).transact(xa).map(_.headOption))
 
-  override def update(model: Transaction): F[String] = run(quote {
+  override def update(model: Transaction): F[Unit] = run(quote {
     query[Transaction]
       .filter(_.Reference == lift(model.Reference))
       .update(lift(model))
-  }).transact(xa).as(model.Reference)
+  }).transact(xa).void
 }
 
 //object TransactionRepositoryInterpreter {

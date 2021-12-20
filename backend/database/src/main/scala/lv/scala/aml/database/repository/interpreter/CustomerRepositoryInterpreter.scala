@@ -27,10 +27,10 @@ class CustomerRepositoryInterpreter[F[_]: Sync: Logger](
       query[Customer].filter(_.CustomerID == lift(customerID))
     }).transact(xa).map(_.headOption))
 
-  override def update(customer: Customer): F[String] =
+  override def update(customer: Customer): F[Unit] =
     run(quote {
       query[Customer]
         .filter(_.CustomerID == lift(customer.CustomerID))
         .update(lift(customer))
-    }).transact(xa).as(customer.CustomerID)
+    }).transact(xa).void
 }

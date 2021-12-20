@@ -13,6 +13,8 @@ lazy val root = (project in file("."))
         scalacOptions ++= Seq(
           "-deprecation",
           "-feature",
+          "-ignoreIgnoredMigrations=true",
+          "-outOfOrder=true",
           "-language:higherKinds",
           "-unchecked",
           "-Ylog-classpath",

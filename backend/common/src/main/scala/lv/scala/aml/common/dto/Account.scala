@@ -5,7 +5,7 @@ import java.time.Instant
 
 
 case class Account(
-  IBAN: String,
+  IBAN: IBAN,
   BBAN: String,
   AccountType: String,
   OpenDate: Instant,

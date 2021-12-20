@@ -9,7 +9,7 @@ function App() {
   const ws = new WebSocket("ws://127.0.0.1:9000/alerts/subscribe");
 
   ws.onmessage = function (event) {
-    const json = JSON.parse(event);
+    const json = JSON.parse(event.data);
     try {
       console.log(json);
     } catch (err) {

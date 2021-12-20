@@ -16,13 +16,12 @@ trait KafkaConsumer[F[_],A] {
 
 object KafkaConsumer {
   def apply[F[_]: ConcurrentEffect : ContextShift : Timer : Applicative, A](
-    kafkaConfig: KafkaConfig,
-    kafkaErrorProducer: KafkaErrorProducer[F, KafkaErrorMessage]
+    kafkaConfig: KafkaConfig
   )(implicit d: Deserializer[F, Either[Throwable, KafkaMessage[A]]]
   ): Resource[F, KafkaConsumerImpl[F, A]] =
     fs2.kafka.KafkaConsumer.resource(consumerSettings[F, Unit, Serdes.Attempt[KafkaMessage[A]]](kafkaConfig)).evalMap{ c =>
       c.subscribeTo(kafkaConfig.consumerTopic).as {
-                new KafkaConsumerImpl(c, kafkaErrorProducer = kafkaErrorProducer)
+                new KafkaConsumerImpl(c)
       }
     }
 
@@ -40,8 +39,7 @@ object KafkaConsumer {
 class KafkaConsumerImpl[F[_]: ConcurrentEffect : ContextShift : Timer, A](
   consumer: fs2.kafka.KafkaConsumer[F, Unit, Serdes.Attempt[KafkaMessage[A]]],
   maxPerBatch: Int = 5,
-  batchTime: FiniteDuration = 5.seconds,
-  kafkaErrorProducer: KafkaErrorProducer[F, KafkaErrorMessage]
+  batchTime: FiniteDuration = 5.seconds
 ) extends KafkaConsumer[F, A] {
   private val logger = Slf4jLogger.getLogger[F]
 

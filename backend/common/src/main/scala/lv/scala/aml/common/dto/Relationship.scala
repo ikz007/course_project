@@ -8,7 +8,7 @@ import java.time.Instant
 case class Relationship(
   RelationshipID: String,
   CustomerID: String,
-  IBAN: String,
+  IBAN: IBAN,
   StartDate: Instant,
   EndDate: Instant
 )

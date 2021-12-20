@@ -7,7 +7,7 @@ import doobie.quill.DoobieContext.MySQL
 import io.chrisdavenport.log4cats.Logger
 import io.getquill.CamelCase
 import io.getquill.context.jdbc.{Decoders, Encoders}
-import lv.scala.aml.common.dto.{Account, Customer, Relationship}
+import lv.scala.aml.common.dto.{Account, Customer, IBAN, Relationship}
 import lv.scala.aml.database.Schema
 import lv.scala.aml.database.repository.RelationshipRepository
 import doobie.implicits._
@@ -20,11 +20,11 @@ class RelationshipRepositoryInterpreter [F[_]: Sync: Logger](
 ) extends RelationshipRepository[F] with Schema{
   import ctx._
 
-  override def getRelatedCustomers(IBAN: String): F[List[Customer]] = run(quote {
+  override def getRelatedCustomers(iban: IBAN): F[List[Customer]] = run(quote {
     query[Relationship]
       .join(query[Customer])
       .on(_.CustomerID == _.CustomerID)
-      .filter(_._1.IBAN == lift(IBAN))
+      .filter(_._1.IBAN == lift(iban))
       .map{ case (_, customer) => customer}
   }).transact(xa)
 
@@ -40,12 +40,12 @@ class RelationshipRepositoryInterpreter [F[_]: Sync: Logger](
     query[Relationship]
   }).transact(xa)
 
-  override def update(model: Relationship): F[String] =
+  override def update(model: Relationship): F[Unit] =
     run(quote {
       query[Relationship]
         .filter(_.RelationshipID == lift(model.RelationshipID))
         .update(lift(model))
-    }).transact(xa).as(model.RelationshipID.toString)
+    }).transact(xa).void
 
   override def getById(id: String): OptionT[F, Relationship] =
     OptionT(run(quote {

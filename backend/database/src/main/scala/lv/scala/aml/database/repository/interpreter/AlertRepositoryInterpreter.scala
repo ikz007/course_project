@@ -42,7 +42,8 @@ class AlertRepositoryInterpreter[F[_]: Sync](
       query[Alert]
         .filter(alert => alert.Subject == lift(IBAN) && alert.SubjectType ==  lift("Account"))
     }).transact(xa)
-  implicit val InstantMeta: Meta[Instant] = Meta[Date].timap(_.toInstant)(Date.from)
+  implicit val DateTimeMeta: Meta[Instant] =
+    Meta[java.sql.Timestamp].imap(_.toInstant)(java.sql.Timestamp.from)
   override def getStream: fs2.Stream[F, Alert] =
     sql"select AlertId, Subject, SubjectType, TransactionReferences, AlertedCondition, AlertedValue, cast(DateCreated as date), ScenarioName from Alert"
       .query[Alert]

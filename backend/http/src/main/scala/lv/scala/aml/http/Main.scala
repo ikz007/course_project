@@ -1,7 +1,7 @@
 package lv.scala.aml.http
 
 import cats.data.Kleisli
-import cats.effect.{ExitCode, IO, IOApp, Resource}
+import cats.effect.{Concurrent, ExitCode, IO, IOApp, Resource}
 import doobie.hikari.HikariTransactor
 import doobie.quill.DoobieContext.MySQL
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
@@ -12,8 +12,10 @@ import cats.syntax.all._
 import lv.scala.aml.common.dto.scenario.ScenarioConfiguration
 import lv.scala.aml.config.{Config, KafkaConfig, ServerConfig}
 import lv.scala.aml.database.repository.interpreter.{AccountRepositoryInterpreter, AlertRepositoryInterpreter, CountryRepositoryInterpreter, CustomerRepositoryInterpreter, QuestionnaireRepositoryInterpreter, RelationshipRepositoryInterpreter, TransactionRepositoryInterpreter}
+import lv.scala.aml.database.utils.AmlRuleChecker
 import lv.scala.aml.database.{Database, DbInit, ScenarioConfigRetriever, TransactionTopicSubscriber}
 import lv.scala.aml.http.services.{AccountService, AlertService, CountryService, CustomerService, QuestionnaireService, RelationshipService, TransactionService}
+import lv.scala.aml.kafka.Serdes.encodingSer
 import org.http4s.{HttpRoutes, Request, Response}
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -53,15 +55,13 @@ object Main extends IOApp{
     }
   // routes.orNotFound
 
-  def stream(serverConfig: ServerConfig, scenarioConfig: ScenarioConfiguration, kafka: KafkaConfig, transactor: HikariTransactor[IO]) =
-    for {
-      listener <- TransactionTopicSubscriber[IO](transactor, kafka, scenarioConfig)
-    } yield BlazeServerBuilder[IO](global)
-      .bindHttp(serverConfig.port, serverConfig.host)
+  def stream(config: Config, transactor: HikariTransactor[IO]) =
+    BlazeServerBuilder[IO](global)
+      .bindHttp(config.server.port, config.server.host)
       .withHttpApp(makeRouter(transactor))
+      .withWebSockets(true)
       .serve
-      .concurrently(listener.subscribe)
-      .compile
+
 
   def withCors(svc: HttpRoutes[IO]): HttpRoutes[IO] =
     CORS(
@@ -81,10 +81,12 @@ object Main extends IOApp{
     for {
       _ <- logger.info("Server starting...")
       config <- Config.load()
-      xa <- IO.pure(Database.buildTransactor(Database.TransactorConfig(config.dbConfig)))
-     // _ <- Database.bootstrap(xa)
-      _ <- DbInit.initialize[IO](xa)
+      xa <- IO.pure(Database.buildTransactor(Database.TransactorConfig(config.db)))
+     // _ <- DbInit.initialize[IO](xa)
       scenarioSettings <- ScenarioConfigRetriever(xa).retrieveConfiguration
-      exitCode <- stream(config.serverConfig, scenarioSettings, config.kafkaConfig, xa).use(_.lastOrError) //.compile.drain.map(_ => ExitCode.Success)
+      amlRuleChecker <- IO.delay(AmlRuleChecker[IO](xa, scenarioSettings))
+    //  kafkaErrorProducer <- KafkaErrorProducer.apply[IO](config.kafka)
+      _ <- Concurrent[IO].start(new TransactionTopicSubscriber[IO](xa, config.kafka, amlRuleChecker).subscribe2)
+      exitCode <- stream(config,xa).compile.drain.map(_ => ExitCode.Success) // .use(_.lastOrError) //.compile.drain.map(_ => ExitCode.Success)
     } yield exitCode
 }

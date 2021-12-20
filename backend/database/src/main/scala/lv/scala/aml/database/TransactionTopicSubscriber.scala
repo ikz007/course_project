@@ -1,84 +1,93 @@
 package lv.scala.aml.database
 
 import cats.Applicative
-import lv.scala.aml.common.dto.responses.KafkaErrorMessage
-import lv.scala.aml.config.KafkaConfig
-import lv.scala.aml.kafka.Serdes._
-import lv.scala.aml.kafka.{KafkaConsumer, KafkaErrorProducer, KafkaMessage}
-import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Sync, Timer}
-import doobie.hikari.HikariTransactor
-import lv.scala.aml.common.dto.Transaction
-import fs2.kafka.CommittableOffsetBatch
-import fs2.Chunk
-import doobie.implicits._
+import cats.effect.{ConcurrentEffect, ContextShift, Sync, Timer}
 import cats.syntax.all._
 import doobie.Update
+import doobie.hikari.HikariTransactor
+import doobie.implicits._
 import doobie.util.meta.Meta
+import fs2.Chunk
+import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import lv.scala.aml.common.dto.scenario.ScenarioConfiguration
+import lv.scala.aml.common.dto.Transaction
+import lv.scala.aml.common.dto.parser.TransactionParser
+import lv.scala.aml.config.KafkaConfig
+import lv.scala.aml.database.utils.AmlRuleChecker
+import lv.scala.aml.kafka.{KafkaErrProduce, KafkaMessage, KafkaReceiver}
 
-import java.util.Date
-import java.time.Instant
+import java.time.LocalDate
 
-class TransactionTopicSubscriber[F[_]: Sync](
+class TransactionTopicSubscriber[F[_]: Sync: Logger: ContextShift: ConcurrentEffect: Timer: Applicative](
   xa: HikariTransactor[F],
-  kafkaConsumer: KafkaConsumer[F, Transaction],
-  kafkaErrorProducer: KafkaErrorProducer[F, KafkaErrorMessage],
-  scenarioConfiguration: ScenarioConfiguration
+  kafkaConfig: KafkaConfig,
+  amlRuleChecker: AmlRuleChecker[F]
+ // kafkaConsumer: KafkaConsumer[F, Transaction],
+//  kafkaErrorProducer: KafkaErrorProducer[F],
+  //scenarioConfiguration: ScenarioConfiguration
 ) {
 
   private val logger = Slf4jLogger.getLogger[F]
-  implicit val InstantMeta: Meta[Instant] = Meta[Date].timap(_.toInstant)(Date.from)
-  def subscribe = {
-    logger.info("Subscribed to the Kafka Consumer...")
-    val trnsStream = kafkaConsumer.stream.evalMap { chunk =>
-      createTransactions(chunk.map { case (update, _) => update })
-        .map(_ -> CommittableOffsetBatch.fromFoldable(chunk.map {
-          case (_, offset) => offset
-        }))
-    }
-    trnsStream.evalMap{
-      case (x,offsetBatch) => logger.info(s"$x messages commited") *> offsetBatch.commit.as(x)
-    }
-  }
+  implicit val InstantMeta: Meta[LocalDate] = Meta[String].imap(LocalDate.parse)(_.toString)
 
-  private def checkForAlert(
-    transactions: Chunk[Transaction]
-  ): F[Int] = {
-    transactions.traverse(transaction => {
-      val matchedKeywords = scenarioConfiguration.keywords.filter(transaction.Description.contains(_))
-      if (!matchedKeywords.isEmpty) {
-        insertAlert("MatchedKeywords", matchedKeywords.mkString(","), transaction.Reference, transaction.OurIBAN)
-      } else if (scenarioConfiguration.highRiskCountries.contains(transaction.CountryCode)) {
-        insertAlert("HighRiskCountry", transaction.CountryCode, transaction.Reference, transaction.OurIBAN)
-      } else if (transaction.Amount > scenarioConfiguration.defaultMaxThreshold) {
-        insertAlert("ThresholdCheck", transaction.Amount.toString(), transaction.Reference, transaction.OurIBAN)
-      } else {
-        Sync[F].pure(0)
+  def subscribe2 = {
+    val kafkaProducer = new KafkaErrProduce(kafkaConfig)
+    KafkaReceiver.create[F](kafkaConfig)(
+      TransactionParser.parseJson,
+      kafkaProducer.streamProduce,
+      storeTransaction,
+      amlRuleChecker.check)
+//    logger.info("Subscribed to the Kafka Consumer...")
+//    KafkaReceiver.create[F](kafkaConfig)(TransactionParser.parseJson(_), kafkaErrorProducer.produceOne(_), saveTransaction(_), saveTransaction(_))
+  }
+//  def subscribe = {
+//    logger.info("Subscribed to the Kafka Consumer...")
+//    val trnsStream = kafkaConsumer.stream.evalMap { chunk =>
+//      createTransactions(chunk.map { case (update, _) => update })
+//        .map(_ -> CommittableOffsetBatch.fromFoldable(chunk.map {
+//          case (_, offset) => offset
+//        }))
+//    }
+//    trnsStream.evalMap{
+//      case (x,offsetBatch) => logger.info(s"$x messages commited") *> offsetBatch.commit.as(x)
+//    }
+//  }
+
+//  private def checkForAlert(
+//    transactions: Chunk[Transaction]
+//  ): F[Int] = {
+//    transactions.traverse(transaction => {
+//      val matchedKeywords = scenarioConfiguration.keywords.filter(transaction.Description.contains(_))
+//      if (!matchedKeywords.isEmpty) {
+//        insertAlert("MatchedKeywords", matchedKeywords.mkString(","), transaction.Reference, transaction.OurIBAN.value)
+//      } else if (scenarioConfiguration.highRiskCountries.contains(transaction.CountryCode)) {
+//        insertAlert("HighRiskCountry", transaction.CountryCode, transaction.Reference, transaction.OurIBAN.value)
+//      } else if (transaction.Amount > scenarioConfiguration.defaultMaxThreshold) {
+//        insertAlert("ThresholdCheck", transaction.Amount.toString(), transaction.Reference, transaction.OurIBAN.value)
+//      } else {
+//        Sync[F].pure(0)
+//      }
+//    }
+//    ).map(_.sumAll)
+//  }
+
+
+   def storeTransaction: Transaction => F[Unit] = (transaction: Transaction) => {
+    val sqlInsert =
+      """
+           insert ignore into Transaction
+        |(OurIBAN, TheirIBAN, Reference, TransactionCode, BookingDateTime,
+        |DebitCredit, Amount, Currency, Description, CountryCode)
+        |values (?,?,?,?,?,?,?,?,?,?);
+         """.stripMargin
+
+    Update[Transaction](sqlInsert)
+      .run(transaction)
+      .transact(xa)
+      .map(_ => ())
+      .handleErrorWith { err =>
+        logger.error(err)(s"Failed to insert transaction in DB, ${err.getMessage}")
       }
-    }
-    ).map(_.sumAll)
-  }
-
-  private def insertAlert(
-    alertedCondition: String,
-    alertedValue: String,
-    transactionReference: String,
-    subject: String,
-    scenarioName: String = "RealTime",
-    subjectType: String = "Account"
-  ): F[Int] = {
-    sql"""insert ignore into Alert
-        (Subject, SubjectType, TransactionReferences,
-        AlertedCondition, AlertedValue, DateCreated,
-        ScenarioName)
-        values ($subject, $subjectType, $transactionReference, $alertedCondition, $alertedValue, NOW(), $scenarioName);
-        """.update.withUniqueGeneratedKeys[Int]("AlertId").transact(xa)
-      .handleErrorWith(err =>
-      logger.info(s"Failed to create alert in DB, ${err.getMessage}")  *> Sync[F].pure(0)
-    )
-
-
   }
 
   private def createTransactions(
@@ -94,7 +103,7 @@ class TransactionTopicSubscriber[F[_]: Sync](
     val transactions = messages.map(_.message)
 
     for {
-      _ <- checkForAlert(transactions)
+   //   _ <- checkForAlert(transactions)
       res <- Update[Transaction](sqlInsert)
         .updateMany(transactions)
         .transact(xa)
@@ -129,16 +138,16 @@ class TransactionTopicSubscriber[F[_]: Sync](
     //*> kafkaErrorProducer.produceOne(KafkaErrorMessage(err.getMessage, ""))
   }
 }
-
-object TransactionTopicSubscriber {
-  def apply[F[_]: ConcurrentEffect : ContextShift : Timer : Applicative](
-    xa: HikariTransactor[F],
-    kafkaConfig: KafkaConfig,
-    scenarioConfiguration: ScenarioConfiguration
-  ): Resource[F, TransactionTopicSubscriber[F]] = for {
-    trnsErrorProducer <- KafkaErrorProducer.apply[F, KafkaErrorMessage](kafkaConfig)
-    transactionConsumer <- KafkaConsumer.apply[F, Transaction](kafkaConfig, trnsErrorProducer)
-  } yield new TransactionTopicSubscriber[F](xa, transactionConsumer, trnsErrorProducer, scenarioConfiguration)
-
-
-}
+//
+//object TransactionTopicSubscriber {
+//  def apply[F[_]: Sync: Logger: ContextShift: ConcurrentEffect: Timer: Applicative](
+//    xa: HikariTransactor[F],
+//    kafkaConfig: KafkaConfig,
+//    scenarioConfiguration: ScenarioConfiguration
+//  ): Resource[F, TransactionTopicSubscriber[F]] = for {
+//    trnsErrorProducer <- KafkaErrorProducer.apply[F](kafkaConfig)
+//    transactionConsumer <- KafkaConsumer.apply[F, Transaction](kafkaConfig)
+//  } yield new TransactionTopicSubscriber[F](xa, kafkaConfig,transactionConsumer, trnsErrorProducer)
+//
+//
+//}
