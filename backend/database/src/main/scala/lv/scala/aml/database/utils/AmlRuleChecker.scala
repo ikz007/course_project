@@ -21,9 +21,7 @@ final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffe
 
   def check(
     transaction: Transaction
-  ): F[Unit]  = rules.map(flag(_, transaction)).sequence.map(_.traverse( rule =>
-  insertAlert(rule.generate, rule.ruleName, rule.alertedValue, transaction.Reference, transaction.OurIBAN)
-  ))
+  ): F[Unit]  = rules.map(flag(_, transaction)).sequence.void
 
   private def insertAlert(
     generate: Boolean,
@@ -58,15 +56,13 @@ final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffe
     transaction:Transaction
   )
   //db objects or transactor
-  : F[Rule] = rule match {
-    case TransactionExceeds(amount) => Sync[F].delay(Rule("TransactionExceeds", transaction.Amount.toString(), transaction.Amount > amount))
-//    case And(left,right) =>  for {
-//      first <- flag(left,transaction)
-//      second <- flag(right,transaction)
-//    } yield Rule(s"${first.ruleName};${second.ruleName}",s"${first.value};${second.value}", first.generate && second.generate)
-    case HighRiskCountryCheck(countries) => Sync[F].delay(Rule("HighRiskCountryCheck", transaction.CountryCode, countries.contains(transaction.CountryCode)))
-    case KeywordCheck(keywords) => Sync[F].delay(Rule("KeywordCheck", transaction.Description, keywords.exists(transaction.Description.contains(_))))
-    case _ => Sync[F].delay(Rule("", "", false))
+  : F[Unit] = rule match {
+    case TransactionExceeds(amount) =>
+      insertAlert(transaction.Amount > amount, "TransactionExceeds", transaction.Amount.toString(), transaction.Reference, transaction.OurIBAN)
+    case HighRiskCountryCheck(countries) =>
+      insertAlert(countries.contains(transaction.CountryCode), "HighRiskCountryCheck", transaction.CountryCode, transaction.Reference, transaction.OurIBAN)
+    case KeywordCheck(keywords) =>
+      insertAlert(keywords.exists(transaction.Description.contains(_)), "KeywordCheck", transaction.Description, transaction.Reference, transaction.OurIBAN)
   }
 }
 object AmlRuleChecker{

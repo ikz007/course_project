@@ -24,7 +24,11 @@ case class Transaction (
 
 object Transaction {
   implicit val transactionDecoder: Decoder[Transaction] = deriveDecoder[Transaction]
-  implicit val transactionEncoder: Encoder[Transaction] = deriveEncoder[Transaction]
+  implicit val transactionEncoder: Encoder[Transaction] = new Encoder[Transaction] {
+    override def apply(a: Transaction): Json = Json.obj(
+
+    )
+  }
 
   private type ErrorsOr[T] = ValidatedNel[String, T]
 
@@ -68,15 +72,17 @@ object Transaction {
       }
 
     (
+      IBANHandler.validate(nVTransaction.OurIBAN),
+      IBANHandler.validate(nVTransaction.TheirIBAN),
       validateReference,
       validateCurrency,
       validateCountryCode,
       validateDate,
       validateDebitCredit).mapN{
-      case ( reference, currency, countryCode, trnsDate, debitCredit) =>
+      case ( ourIban, theirIban, reference, currency, countryCode, trnsDate, debitCredit) =>
         Transaction(
-          IBAN(nVTransaction.OurIBAN),
-          IBAN(nVTransaction.TheirIBAN),
+          ourIban,
+          theirIban,
           reference,
           nVTransaction.TransactionCode,
           trnsDate,

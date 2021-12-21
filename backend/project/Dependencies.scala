@@ -22,6 +22,7 @@ object Dependencies {
   private val flywayVersion = "8.0.2"
   private val quillVersion = "3.5.2"
   private val kafkaAvroVersion = "7.0.0"
+  private val junitVersion = "4.12"
 
   object Akka {
     val ActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
@@ -84,5 +85,7 @@ object Dependencies {
   object ScalaTest {
     val WordSpec = "org.sclatest" %% "scalatest-wordspec" % scalaTestVersion
     val ShouldMatchers = "org.scalatest" %% "scalatest-shouldmatchers" % scalaTestVersion
+    val ScalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+    val JUnitTest = "junit" % "junit" % junitVersion
   }
 }

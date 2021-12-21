@@ -13,8 +13,6 @@ lazy val root = (project in file("."))
         scalacOptions ++= Seq(
           "-deprecation",
           "-feature",
-          "-ignoreIgnoredMigrations=true",
-          "-outOfOrder=true",
           "-language:higherKinds",
           "-unchecked",
           "-Ylog-classpath",
@@ -71,7 +69,8 @@ lazy val common = (project in file("common"))
       Circe.CirceConfig,
       Circe.CirceGeneric,
       Cats.CatsEffect,
-      Http4s.Circe
+      Http4s.Circe,
+      ScalaTest.ScalaTest
     )
   )
 

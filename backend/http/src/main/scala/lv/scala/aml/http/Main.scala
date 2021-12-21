@@ -1,25 +1,23 @@
 package lv.scala.aml.http
 
 import cats.data.Kleisli
-import cats.effect.{Concurrent, ExitCode, IO, IOApp, Resource}
+import cats.effect.{Concurrent, ExitCode, IO, IOApp}
+import cats.syntax.all._
 import doobie.hikari.HikariTransactor
 import doobie.quill.DoobieContext.MySQL
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.getquill.CamelCase
 import io.getquill.context.jdbc.{Decoders, Encoders}
-import cats.syntax.all._
-import lv.scala.aml.common.dto.scenario.ScenarioConfiguration
-import lv.scala.aml.config.{Config, KafkaConfig, ServerConfig}
-import lv.scala.aml.database.repository.interpreter.{AccountRepositoryInterpreter, AlertRepositoryInterpreter, CountryRepositoryInterpreter, CustomerRepositoryInterpreter, QuestionnaireRepositoryInterpreter, RelationshipRepositoryInterpreter, TransactionRepositoryInterpreter}
+import lv.scala.aml.config.Config
+import lv.scala.aml.database.repository.interpreter._
 import lv.scala.aml.database.utils.AmlRuleChecker
-import lv.scala.aml.database.{Database, DbInit, ScenarioConfigRetriever, TransactionTopicSubscriber}
-import lv.scala.aml.http.services.{AccountService, AlertService, CountryService, CustomerService, QuestionnaireService, RelationshipService, TransactionService}
-import lv.scala.aml.kafka.Serdes.encodingSer
-import org.http4s.{HttpRoutes, Request, Response}
+import lv.scala.aml.database.{Database, ScenarioConfigRetriever, TransactionTopicSubscriber}
+import lv.scala.aml.http.services._
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, CORSConfig}
+import org.http4s.{HttpRoutes, Request, Response}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -29,8 +27,6 @@ object Main extends IOApp{
 
   private lazy val ctx: MySQL[CamelCase] with Decoders with Encoders =
     new MySQL[CamelCase](CamelCase) with Decoders with Encoders
-
- // private val routes: HttpRoutes[IO] = new AccountRoutes[IO].routes
 
   // ToDo: Concider using middleware to TimeOut request & global error handling
   def makeRouter(transactor: HikariTransactor[IO]): Kleisli[IO, Request[IO], Response[IO]] =
@@ -53,7 +49,6 @@ object Main extends IOApp{
 
       withCors(accountRoutes <+> countryRoutes <+> questionaireRoutes <+> relationshipRoutes <+> transactionRoutes <+> customerRoutes <+> alertRoutes).orNotFound
     }
-  // routes.orNotFound
 
   def stream(config: Config, transactor: HikariTransactor[IO]) =
     BlazeServerBuilder[IO](global)
@@ -85,7 +80,6 @@ object Main extends IOApp{
      // _ <- DbInit.initialize[IO](xa)
       scenarioSettings <- ScenarioConfigRetriever(xa).retrieveConfiguration
       amlRuleChecker <- IO.delay(AmlRuleChecker[IO](xa, scenarioSettings))
-    //  kafkaErrorProducer <- KafkaErrorProducer.apply[IO](config.kafka)
       _ <- Concurrent[IO].start(new TransactionTopicSubscriber[IO](xa, config.kafka, amlRuleChecker).subscribe2)
       exitCode <- stream(config,xa).compile.drain.map(_ => ExitCode.Success) // .use(_.lastOrError) //.compile.drain.map(_ => ExitCode.Success)
     } yield exitCode
