@@ -1,7 +1,7 @@
 package lv.scala.aml.http
 
 import cats.data.Kleisli
-import cats.effect.{Concurrent, ExitCode, IO, IOApp}
+import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.all._
 import doobie.hikari.HikariTransactor
 import doobie.quill.DoobieContext.MySQL
@@ -14,6 +14,7 @@ import lv.scala.aml.database.repository.interpreter._
 import lv.scala.aml.database.utils.AmlRuleChecker
 import lv.scala.aml.database.{Database, ScenarioConfigRetriever, TransactionTopicSubscriber}
 import lv.scala.aml.http.services._
+import lv.scala.aml.kafka.KafkaErrProduce
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.{CORS, CORSConfig}
@@ -75,12 +76,13 @@ object Main extends IOApp{
   override def run(args: List[String]): IO[ExitCode] =
     for {
       _ <- logger.info("Server starting...")
-      config <- Config.load()
-      xa <- IO.pure(Database.buildTransactor(Database.TransactorConfig(config.db)))
+      config <- Config.load[IO]()
+      xa <- IO.pure(Database.buildTransactor[IO](Database.TransactorConfig(config.db)))
      // _ <- DbInit.initialize[IO](xa)
       scenarioSettings <- ScenarioConfigRetriever(xa).retrieveConfiguration
       amlRuleChecker <- IO.delay(AmlRuleChecker[IO](xa, scenarioSettings))
-      _ <- Concurrent[IO].start(new TransactionTopicSubscriber[IO](xa, config.kafka, amlRuleChecker).subscribe2)
+      kafkaErrProducer <- IO.delay(KafkaErrProduce[IO](config.kafka))
+      _ <- new TransactionTopicSubscriber[IO](xa, config.kafka, kafkaErrProducer, amlRuleChecker).subscribe2.start
       exitCode <- stream(config,xa).compile.drain.map(_ => ExitCode.Success) // .use(_.lastOrError) //.compile.drain.map(_ => ExitCode.Success)
     } yield exitCode
 }

@@ -5,6 +5,7 @@ import cats.effect.Sync
 import cats.syntax.all._
 import io.circe.syntax._
 import lv.scala.aml.common.dto.Country
+import lv.scala.aml.common.dto.responses.{ErrorType, HttpResponse}
 import lv.scala.aml.database.repository.interpreter.CountryRepositoryInterpreter
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec.{circeEntityDecoder, circeEntityEncoder}
@@ -19,18 +20,18 @@ class CountryService[F[_]: Sync](
   // create response models
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case _ @ GET -> Root / "countries" / "all" =>
-      get.flatMap { case list => Ok(list.asJson)
-      case Nil => NotFound()
+      get.flatMap { case list => Ok(HttpResponse(true, list.asJson))
+      case Nil => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
     case _ @ GET -> Root / "countries" / id =>
       getById(id).value.flatMap {
-        case Some(account) => Ok(account.asJson)
-        case None => NotFound("Such account does not exist")
+        case Some(account) => Ok(HttpResponse(true, account.asJson))
+        case None => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
     case req @ PUT -> Root / "countries" =>
       req.decode[Country] { acc =>
-        update(acc).flatMap(_ => Accepted())
-      }.handleErrorWith(e => BadRequest(e.getMessage))
+        update(acc).flatMap(_ => Accepted(HttpResponse(true, ())))
+      }.handleErrorWith(_ => BadRequest(HttpResponse(false, ErrorType.UpdateFailed.value)))
   }
 }
 

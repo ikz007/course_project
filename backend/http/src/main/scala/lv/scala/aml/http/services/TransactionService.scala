@@ -3,10 +3,11 @@ import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.all._
 import io.circe.syntax._
+import lv.scala.aml.common.dto.responses.{ErrorType, HttpResponse}
 import lv.scala.aml.common.dto.{IBAN, Transaction}
 import lv.scala.aml.database.repository.interpreter.TransactionRepositoryInterpreter
 import org.http4s.HttpRoutes
-import org.http4s.circe.CirceEntityCodec.{circeEntityDecoder, circeEntityEncoder}
+import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
 import org.http4s.dsl.Http4sDsl
 class TransactionService[F[_]: Sync](
   transactionRepositoryInterpreter: TransactionRepositoryInterpreter[F]
@@ -20,28 +21,24 @@ class TransactionService[F[_]: Sync](
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case _ @ GET -> Root / "transactions" / "all" =>
       get.flatMap {
-        case list => Ok(list.asJson)
-        case Nil => NotFound()
+        case list => Ok(HttpResponse(true, list.asJson))
+        case Nil => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
     case _ @ GET -> Root / "transactions" / "customer" / customerID =>
       getCustomerTransactions(customerID).flatMap {
-        case list => Ok(list.asJson)
-        case Nil => NotFound()
+        case list => Ok(HttpResponse(true, list.asJson))
+        case Nil => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
 
     case _ @ GET -> Root / "transactions" / "account" / iban =>
-      getAccountTransactions(IBAN(iban)).flatMap { case list => Ok(list.asJson)
-      case Nil => NotFound()
+      getAccountTransactions(IBAN(iban)).flatMap { case list => Ok(HttpResponse(true, list.asJson))
+      case Nil => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
     case _ @ GET -> Root / "transactions" / id =>
       getById(id).value.flatMap {
-        case Some(transaction) => Ok(transaction.asJson)
-        case None => NotFound("Such account does not exist")
+        case Some(transaction) => Ok(HttpResponse(true, transaction.asJson))
+        case None => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
-    //    case req @ PUT -> Root / "accounts" =>
-    //      req.decode[Account] { acc =>
-    //        update(acc).flatMap(_ => Accepted())
-    //      }.handleErrorWith(e => BadRequest(e.getMessage))
   }
 }
 

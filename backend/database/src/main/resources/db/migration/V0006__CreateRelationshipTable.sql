@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS Relationship(
-    RelationshipID VARCHAR(50),
-    CustomerID VARCHAR(50),
-    IBAN VARCHAR(50),
-    StartDate DATE,
-    EndDate DATE DEFAULT '9999-01-01',
+    RelationshipID VARCHAR(50) NOT NULL,
+    CustomerID VARCHAR(50) NOT NULL,
+    IBAN VARCHAR(50) NOT NULL,
+    StartDate VARCHAR(25) NOT NULL,
+    EndDate VARCHAR(25) DEFAULT '9999-01-01',
     FOREIGN KEY (CustomerID)
     REFERENCES Customer(CustomerID),
     FOREIGN KEY (IBAN)

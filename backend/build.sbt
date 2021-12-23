@@ -58,7 +58,8 @@ lazy val database = (project in file("database"))
       Circe.CirceGeneric,
       Logging.Sl4j,
       Logging.Sl4cats,
-      Logging.Sl4core
+      Logging.Sl4core,
+      Database.h2DB
     )
   )
 
@@ -70,7 +71,14 @@ lazy val common = (project in file("common"))
       Circe.CirceGeneric,
       Cats.CatsEffect,
       Http4s.Circe,
-      ScalaTest.ScalaTest
+      ScalaTest.ScalaTest,
+      ScalaTest.MockitoTest,
+      ScalaTest.catsEffectTest,
+      ScalaTest.munitTest,
+      ScalaTest.munitCatsTest,
+      ScalaTest.doobieScalaTest,
+      Enum.enumerator,
+      Circe.enumeratorCirce
     )
   )
 
@@ -85,8 +93,6 @@ lazy val kafka = (project in file("kafka"))
       Logging.Sl4j,
       Logging.Sl4cats,
       Logging.Sl4core
-//      Kafka.fs2KafkaVulkan,
-//      Kafka.kafkaAvro
     )
   )
 

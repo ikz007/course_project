@@ -1,15 +1,17 @@
 package lv.scala.aml.common.dto
 
-import io.circe._, io.circe.generic.semiauto._
-import java.time.Instant
+import io.circe._
+import io.circe.generic.semiauto._
+
+import java.time.LocalDate
 
 
-case class Account(
+final case class Account(
   IBAN: IBAN,
-  BBAN: String,
-  AccountType: String,
-  OpenDate: Instant,
-  CloseDate: Instant,
+  BBAN: Option[String],
+  AccountType: Option[String],
+  OpenDate: Option[LocalDate],
+  CloseDate: Option[LocalDate],
   Status: String = "Active"
 )
 

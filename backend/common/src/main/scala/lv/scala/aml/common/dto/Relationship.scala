@@ -3,14 +3,14 @@ package lv.scala.aml.common.dto
 import io.circe._
 import io.circe.generic.semiauto._
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 
-case class Relationship(
+final case class Relationship(
   RelationshipID: String,
   CustomerID: String,
   IBAN: IBAN,
-  StartDate: Instant,
-  EndDate: Instant
+  StartDate: LocalDate,
+  EndDate: Option[LocalDate]
 )
 
 object Relationship {

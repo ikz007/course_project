@@ -1,8 +1,9 @@
 package lv.scala.aml.common.dto
 
-import cats.data.Validated.{Invalid, Valid, valid}
+import cats.data.Validated.{Invalid, Valid}
+import lv.scala.aml.common.dto.IBAN
 import cats.data.{NonEmptyList, ValidatedNel}
-import cats.implicits.{catsSyntaxTuple5Semigroupal, catsSyntaxTuple6Semigroupal, catsSyntaxTuple7Semigroupal}
+import cats.implicits.{catsSyntaxOptionId, catsSyntaxTuple7Semigroupal}
 import io.circe._
 import io.circe.generic.semiauto._
 
@@ -18,18 +19,13 @@ case class Transaction (
   DebitCredit: String,
   Amount: BigDecimal,
   Currency: String,
-  Description: String,
+  Description: Option[String],
   CountryCode: String
 )
 
 object Transaction {
   implicit val transactionDecoder: Decoder[Transaction] = deriveDecoder[Transaction]
-  implicit val transactionEncoder: Encoder[Transaction] = new Encoder[Transaction] {
-    override def apply(a: Transaction): Json = Json.obj(
-
-    )
-  }
-
+  implicit val transactionEncoder: Encoder[Transaction] = deriveEncoder[Transaction]
   private type ErrorsOr[T] = ValidatedNel[String, T]
 
   def apply(nVTransaction: NotValidatedTransaction): ValidatedNel[String, Transaction] = {
@@ -89,7 +85,7 @@ object Transaction {
           debitCredit,
           nVTransaction.Amount,
           currency,
-          nVTransaction.Description,
+          nVTransaction.Description.some,
           countryCode
         )
     }

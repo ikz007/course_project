@@ -4,7 +4,7 @@ import cats.data.OptionT
 import cats.effect.Sync
 import doobie.util.meta.Meta
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 import java.util.Date
 import doobie.implicits.javasql._
 import cats.syntax.all._
@@ -42,8 +42,6 @@ class AlertRepositoryInterpreter[F[_]: Sync](
       query[Alert]
         .filter(alert => alert.Subject == lift(IBAN) && alert.SubjectType ==  lift("Account"))
     }).transact(xa)
-  implicit val DateTimeMeta: Meta[Instant] =
-    Meta[java.sql.Timestamp].imap(_.toInstant)(java.sql.Timestamp.from)
   override def getStream: fs2.Stream[F, Alert] =
     sql"select AlertId, Subject, SubjectType, TransactionReferences, AlertedCondition, AlertedValue, cast(DateCreated as date), ScenarioName from Alert"
       .query[Alert]

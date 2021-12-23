@@ -1,3 +1,5 @@
 package lv.scala.aml.common.dto.responses
 
-case class HttpResponse()
+import io.circe.generic.JsonCodec
+
+@JsonCodec case class HttpResponse[T](success: Boolean, result: T)

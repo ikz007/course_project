@@ -66,9 +66,22 @@ import lv.scala.aml.kafka.Serdes.encodingSer
 
 
 class KafkaErrProduce[F[_]: ConcurrentEffect : ContextShift : Timer : Applicative](
-  kafkaConfig: KafkaConfig
+  kafkaConfig: KafkaConfig,
+  kafkaStream: fs2.Stream[F, KafkaProducer[F, Unit, InvalidMessage]]
 ) {
-  def producerSettings (
+  // initialize one time
+  def streamProduce(message: InvalidMessage) =
+   kafkaStream.evalMap{ producer =>
+      val rs = ProducerRecords.one(ProducerRecord(kafkaConfig.producerTopic, (), message))
+      producer.produce(rs).flatten }.compile.drain
+}
+
+object KafkaErrProduce {
+  def apply[F[_]: ConcurrentEffect : ContextShift : Timer : Applicative](
+    kafkaConfig: KafkaConfig
+  ) = new KafkaErrProduce(kafkaConfig, KafkaProducer[F].stream(producerSettings(kafkaConfig)))
+
+  private def producerSettings[F[_]: ConcurrentEffect : ContextShift : Timer : Applicative] (
     kafkaConfig: KafkaConfig
   ): ProducerSettings[F, Unit, InvalidMessage] =
     ProducerSettings[F, Unit, InvalidMessage]
@@ -76,10 +89,4 @@ class KafkaErrProduce[F[_]: ConcurrentEffect : ContextShift : Timer : Applicativ
       .withClientId(kafkaConfig.clientId)
       .withRetries(Int.MaxValue)
       .withEnableIdempotence(true)
-
-
-  def streamProduce(message: InvalidMessage) =
-    KafkaProducer[F].stream(producerSettings(kafkaConfig)).evalMap{ producer =>
-      val rs = ProducerRecords.one(ProducerRecord(kafkaConfig.producerTopic, (), message))
-      producer.produce(rs).flatten }.compile.drain
 }

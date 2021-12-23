@@ -58,19 +58,19 @@ object Database {
     }
   }
 
-  def buildTransactor(
+  def buildTransactor[F[_] : Async : ContextShift](
     config: TransactorConfig
-  )(implicit cs: ContextShift[IO]): HikariTransactor[IO] =
-    HikariTransactor.apply[IO](
+  ): HikariTransactor[F] =
+    HikariTransactor.apply[F](
       config.hikariDataSource,
       config.connectionEC,
       config.transactionBlocker
     )
 
-  def buildTransactorResource(
+  def buildTransactorResource[F[_] : Async : ContextShift](
     config: TransactorConfig
-  )(implicit cs: ContextShift[IO]) = {
-    HikariTransactor.newHikariTransactor[IO](
+  ) = {
+    HikariTransactor.newHikariTransactor[F](
       config.dbConfig.driver,
       config.dbConfig.url,
       config.dbConfig.username,

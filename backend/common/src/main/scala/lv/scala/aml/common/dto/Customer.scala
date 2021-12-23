@@ -3,15 +3,15 @@ package lv.scala.aml.common.dto
 import io.circe._
 import io.circe.generic.semiauto._
 
-import java.time.Instant
+import java.time.LocalDate
 
-case class Customer(
+final case class Customer(
   CustomerID: String,
   CustomerName: String,
-  BusinessType: String,
+  BusinessType: Option[String],
   MonthlyIncome: BigDecimal,
   Status: String = "Active",
-  BirthDate: Instant,
+  BirthDate: LocalDate,
   PEP: Boolean = false,
   CountryOfBirth: String,
   CountryOfResidence: String

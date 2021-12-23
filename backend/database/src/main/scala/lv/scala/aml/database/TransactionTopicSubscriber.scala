@@ -20,6 +20,7 @@ import java.time.LocalDate
 class TransactionTopicSubscriber[F[_]: Sync: Logger: ContextShift: ConcurrentEffect: Timer: Applicative](
   xa: HikariTransactor[F],
   kafkaConfig: KafkaConfig,
+  kafkaErrProduce: KafkaErrProduce[F],
   amlRuleChecker: AmlRuleChecker[F]
 ) {
 
@@ -27,10 +28,9 @@ class TransactionTopicSubscriber[F[_]: Sync: Logger: ContextShift: ConcurrentEff
   implicit val InstantMeta: Meta[LocalDate] = Meta[String].imap(LocalDate.parse)(_.toString)
 
   def subscribe2 = {
-    val kafkaProducer = new KafkaErrProduce(kafkaConfig)
     KafkaReceiver.create[F](kafkaConfig)(
       TransactionParser.parseJson,
-      kafkaProducer.streamProduce,
+      kafkaErrProduce.streamProduce,
       storeTransaction,
       amlRuleChecker.check)
   }

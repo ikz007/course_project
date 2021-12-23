@@ -62,7 +62,7 @@ final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffe
     case HighRiskCountryCheck(countries) =>
       insertAlert(countries.contains(transaction.CountryCode), "HighRiskCountryCheck", transaction.CountryCode, transaction.Reference, transaction.OurIBAN)
     case KeywordCheck(keywords) =>
-      insertAlert(keywords.exists(transaction.Description.contains(_)), "KeywordCheck", transaction.Description, transaction.Reference, transaction.OurIBAN)
+      insertAlert(keywords.exists(transaction.Description.contains(_)), "KeywordCheck", transaction.Description.getOrElse(""), transaction.Reference, transaction.OurIBAN)
   }
 }
 object AmlRuleChecker{

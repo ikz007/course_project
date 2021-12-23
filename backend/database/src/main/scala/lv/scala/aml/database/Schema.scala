@@ -1,6 +1,7 @@
 package lv.scala.aml.database
 
 import doobie.quill.DoobieContext.MySQL
+import doobie.util.meta.Meta
 import io.getquill.{CamelCase, MappedEncoding}
 import io.getquill.context.jdbc.{Decoders, Encoders}
 
@@ -13,4 +14,5 @@ trait Schema {
   implicit val instanceEncoder: MappedEncoding[Instant, Date] = MappedEncoding[Instant, Date](Date.from)
   implicit val encodeLocalDate = MappedEncoding[LocalDate, String](_.toString())
   implicit val decodeLocalDate = MappedEncoding[String, LocalDate](LocalDate.parse(_))
+  implicit val InstantMeta: Meta[LocalDate] = Meta[String].imap(LocalDate.parse)(_.toString)
 }

@@ -2,9 +2,7 @@ import sbt._
 
 object Dependencies {
 
-  private val scalaVersion = "2.13.7"
-  private val akkaVersion = "2.6.17"
-  private val akkaHttpVersion = "10.2.7"
+  private val mokitoVersion = "1.16.49"
   private val catsVersion = "2.6.1"
   private val catsEffectVersion = "2.5.4"
   private val http4sVersion = "0.21.25"
@@ -21,19 +19,12 @@ object Dependencies {
   private val mysqlConnector = "8.0.25"
   private val flywayVersion = "8.0.2"
   private val quillVersion = "3.5.2"
-  private val kafkaAvroVersion = "7.0.0"
   private val junitVersion = "4.12"
-
-  object Akka {
-    val ActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
-    val ActorTestKitTyped = "com.typesafe.akka" %% "akka-actor-teskit-typed" % akkaVersion
-
-    val Http = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
-    val HttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
-
-    val StreamTyped = "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion
-    val StreamTestKit = "com.typesafe.akka" %% "akka-steam-testkit" % akkaVersion
-  }
+  private val catsEffectTestVersion = "0.5.4"
+  private val munitCatsVersion = "1.0.0"
+  private val munitVersion = "0.7.29"
+  private val h2Version = "2.0.202"
+  private val enumeratumVersion = "1.7.0"
 
   object Cats {
     val CatsCore = "org.typelevel" %% "cats-core" % catsVersion
@@ -44,6 +35,11 @@ object Dependencies {
     val CirceCore = "io.circe" %% "circe-core" % circeVersion
     val CirceGeneric = "io.circe" %% "circe-generic" % circeVersion
     val CirceConfig = "io.circe" %% "circe-config" % circeConfig
+    val enumeratorCirce = "com.beachape" %% "enumeratum-circe" % enumeratumVersion
+  }
+
+  object Enum {
+    val enumerator = "com.beachape" %% "enumeratum"% enumeratumVersion
   }
 
   object Database {
@@ -55,6 +51,7 @@ object Dependencies {
     val MySQLConnector = "mysql" % "mysql-connector-java" % mysqlConnector
     val FlyWay = "org.flywaydb" % "flyway-core" % flywayVersion
     val Quill = "io.getquill" %% "quill-jdbc" % quillVersion
+    val h2DB = "com.h2database" % "h2" % h2Version % Test
   }
 
   object Http4s {
@@ -66,8 +63,6 @@ object Dependencies {
 
   object Kafka {
     val fs2Kafka = "com.github.fd4s" %% "fs2-kafka" % kafkaVersion
-    val fs2KafkaVulkan = "com.github.fd4s" %% "fs2-kafka-vulcan" % kafkaVersion
-    val kafkaAvro = "io.confluent" % "kafka-avro-serializer" % kafkaAvroVersion
   }
 
   object Logging {
@@ -87,5 +82,10 @@ object Dependencies {
     val ShouldMatchers = "org.scalatest" %% "scalatest-shouldmatchers" % scalaTestVersion
     val ScalaTest = "org.scalatest" %% "scalatest" % scalaTestVersion % Test
     val JUnitTest = "junit" % "junit" % junitVersion
+    val MockitoTest = "org.mockito" %% "mockito-scala-scalatest" % mokitoVersion % Test
+    val catsEffectTest = "com.codecommit" %% "cats-effect-testing-scalatest" % catsEffectTestVersion % Test
+    val munitCatsTest = "org.typelevel" %% "munit-cats-effect-2" % munitCatsVersion % "test"
+    val munitTest = "org.scalameta" %% "munit" % munitVersion % "test"
+    val doobieScalaTest = "org.tpolecat" %% "doobie-scalatest" % doobieVersion
   }
 }

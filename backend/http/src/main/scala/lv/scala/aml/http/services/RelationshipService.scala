@@ -4,6 +4,7 @@ import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.all._
 import io.circe.syntax._
+import lv.scala.aml.common.dto.responses.{ErrorType, HttpResponse}
 import lv.scala.aml.common.dto.{Account, Customer, IBAN, Relationship}
 import lv.scala.aml.database.repository.interpreter.RelationshipRepositoryInterpreter
 import org.http4s.HttpRoutes
@@ -22,28 +23,28 @@ class RelationshipService[F[_]: Sync](
   // create response models
   val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case _ @ GET -> Root / "relationships" / "all" =>
-      get.flatMap { case list => Ok(list.asJson)
-      case Nil => NotFound()
+      get.flatMap { case list => Ok(HttpResponse(true, list.asJson))
+      case Nil => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
     case _ @ GET -> Root / "relationships" / id =>
       getById(id).value.flatMap {
-        case Some(relationship) => Ok(relationship.asJson)
-        case None => NotFound("Such account does not exist")
+        case Some(relationship) => Ok(HttpResponse(true, relationship.asJson))
+        case None => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
     case _ @ GET -> Root / "relationships" / "customer" / customerID =>
       getRelatedAccounts(customerID).flatMap {
-        case list => Ok(list.asJson)
-        case Nil => NotFound()
+        case list => Ok(HttpResponse(true, list.asJson))
+        case Nil => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
     case _ @ GET -> Root / "relationships" / "account" / iban =>
       getRelatedCustomers(IBAN(iban)).flatMap {
-        case list => Ok(list.asJson)
-        case Nil => NotFound()
+        case list => Ok(HttpResponse(true, list.asJson))
+        case Nil => NotFound(HttpResponse(false, ErrorType.BusinessObjectNotFound.value))
       }
     case req @ PUT -> Root / "relationships" =>
       req.decode[Relationship] { acc =>
-        update(acc).flatMap(_ => Accepted())
-      }.handleErrorWith(e => BadRequest(e.getMessage))
+        update(acc).flatMap(_ => Accepted(HttpResponse(true, ())))
+      }.handleErrorWith(_ => BadRequest(HttpResponse(false, ErrorType.UpdateFailed.value)))
   }
 }
 

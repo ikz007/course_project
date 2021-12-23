@@ -3,17 +3,16 @@ package lv.scala.aml.common.dto
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
-import java.time.Instant
+import java.time.LocalDate
 
-case class Alert (
+final case class Alert (
   AlertId: Int,
   Subject: String,
   SubjectType: String,
   TransactionReferences: String,
   AlertedCondition: String,
   AlertedValue: String,
-  DateCreated: Instant,
-  ScenarioName: String
+  DateCreated: LocalDate
 )
 
 object Alert {

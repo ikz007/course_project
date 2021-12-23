@@ -1,7 +1,7 @@
 package lv.scala.aml.common.dto
 
 import io.circe._, io.circe.generic.semiauto._
-case class Country(
+final case class Country(
   CountryISO: String,
   CountryName: String,
   HighRiskCountry: Boolean = false

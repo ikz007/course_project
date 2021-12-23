@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS Country(
     CountryISO VARCHAR(2) NOT NULL,
-    CountryName VARCHAR(100),
-    HighRiskCountry BOOLEAN DEFAULT 0
+    CountryName VARCHAR(100) NOT NULL,
+    HighRiskCountry BOOLEAN DEFAULT 0 NOT NULL
 );
 
 CREATE UNIQUE INDEX Countries_CountryISO
