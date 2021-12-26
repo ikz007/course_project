@@ -1,0 +1,5 @@
+{ "OurIBAN": "FR1420041010050500013","TheirIBAN": "AF1420041010050500013", "Reference": "1", "BookingDateTime": "2021-12-24T14:19:54.736Z", "TransactionCode": "INTT", "DebitCredit": "D", "Amount": 1000.00, "Currency": "EUR", "Description": "123", "CountryCode": "AF"}
+{ "OurIBAN": "FR1420041010050500013","TheirIBAN": "DE1420041010050500013", "Reference": "2", "BookingDateTime": "2021-12-23T14:19:54.736Z", "TransactionCode": "INTT", "DebitCredit": "D", "Amount": 1000.00, "Currency": "EUR", "Description": "123", "CountryCode": "AF"}
+{ "OurIBAN": "FR1420041010050500013","TheirIBAN": "RU1420041010050500013", "Reference": "3", "BookingDateTime": "2021-12-22T14:19:54.736Z", "TransactionCode": "INTT", "DebitCredit": "D", "Amount": 1000.00, "Currency": "EUR", "Description": "123", "CountryCode": "AF"}
+
+{ "OurIBAN": "FR1420041010050500013","TheirIBAN": "AF1420041010050500014", "Reference": "4", "BookingDateTime": "2021-12-22T14:19:54.736Z", "TransactionCode": "INTT", "DebitCredit": "D", "Amount": 4000.00, "Currency": "EUR", "Description": "123", "CountryCode": "AF"}

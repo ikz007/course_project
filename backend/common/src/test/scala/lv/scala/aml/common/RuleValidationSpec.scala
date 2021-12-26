@@ -5,6 +5,8 @@ import org.scalatest.EitherValues
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.concurrent.duration.DurationInt
+
 class RuleValidationSpec extends AnyWordSpec with Matchers with EitherValues{
   "AmlRule" should {
     "successfully parsing TransactionExceeds" in {
@@ -22,6 +24,27 @@ class RuleValidationSpec extends AnyWordSpec with Matchers with EitherValues{
       ruleToJson(andRule) must be(andJson)
       jsonToRule(andJson) match {
         case Some(value) => value must be(andRule)
+        case None => fail("Failed to parse")
+      }
+    }
+    "successfully parsing UnexpectedBehavior" in {
+      val unexpectedBehavior = UnexpectedBehavior(3, 30.days)
+      val behaviorJson = "{\"UnexpectedBehavior\":{\"timesBigger\":3,\"duration\":\"30 days\"}}"
+      ruleToJson(unexpectedBehavior) must be(behaviorJson)
+      jsonToRule(behaviorJson) match {
+        case Some(value) => value must be(unexpectedBehavior)
+        case None => fail("Failed to parse")
+      }
+    }
+
+    "successfully parsing transaction to/from undeclared country scenario" in {
+      val undeclaredCountry = UndeclaredCountry(30.days)
+      val transactionExceeds = TransactionExceeds(1000)
+      val combined = And(undeclaredCountry, transactionExceeds)
+      val combinedJson = "{\"And\":{\"left\":{\"UndeclaredCountry\":{\"duration\":\"30 days\"}},\"right\":{\"TransactionExceeds\":{\"amount\":1000}}}}"
+      ruleToJson(combined) must be(combinedJson)
+      jsonToRule(combinedJson) match {
+        case Some(value) => value must be(combined)
         case None => fail("Failed to parse")
       }
     }

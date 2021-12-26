@@ -11,8 +11,11 @@ import lv.scala.aml.common.dto.rules.AmlRule
 import lv.scala.aml.common.dto.rules.AmlRule._
 import lv.scala.aml.common.dto.{IBAN, Transaction}
 
+import java.time.Instant
+import scala.concurrent.duration.FiniteDuration
 
-final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffect: Applicative](
+
+final case class AmlRuleChecker[F[_]: Sync : Logger: ContextShift: ConcurrentEffect: Applicative](
   xa: HikariTransactor[F],
   rules:Seq[AmlRule]
 ) {
@@ -47,9 +50,46 @@ final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffe
     } else {
       Sync[F].unit
     }
-
-
   }
+
+  private def getAverageTransactionAmount(transaction: Transaction, duration: FiniteDuration) =
+    for {
+      timeNow <- Sync[F].delay(Instant.now().minusMillis(duration.toMillis))
+      res <- sql"""
+        SELECT avg(Amount)
+        FROM Transaction
+        WHERE BookingDateTime >= ${timeNow.toString}
+          AND OurIBAN = ${transaction.OurIBAN}
+          AND Reference <> ${transaction.Reference}
+         GROUP BY OurIBAN
+       """.query[BigDecimal].option.transact(xa)
+    } yield res
+
+  private def checkForDeclaredThreshold(transaction: Transaction) =
+    for {
+      res <- sql"""
+          SELECT q.MonthlyTurnover
+          FROM Questionnaire q
+          INNER JOIN Relationship r
+            ON q.CustomerID = r.CustomerID
+          WHERE r.IBAN = ${transaction.OurIBAN}
+            AND q.Country = ${transaction.CountryCode}
+            AND q.Active = 1
+           """.query[BigDecimal].option.transact(xa)
+    } yield res
+
+  private def checkForTransactionSum(transaction: Transaction, duration: FiniteDuration) =
+    for {
+      timeNow <- Sync[F].delay(Instant.now().minusMillis(duration.toMillis))
+      res <-
+        sql"""
+          SELECT sum(Amount)
+          FROM Transaction
+          WHERE BookingDateTime >= ${timeNow.toString}
+          AND OurIBAN = ${transaction.OurIBAN}
+          AND CountryCode = ${transaction.CountryCode}
+           """.query[BigDecimal].option.transact(xa)
+    } yield res
 
   private[database] def flag(
     rule:AmlRule,
@@ -61,6 +101,26 @@ final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffe
       Sync[F].delay(countries.contains(transaction.CountryCode))
     case KeywordCheck(keywords) =>
       Sync[F].delay(keywords.exists(transaction.Description.contains(_)))
+    case UnexpectedBehavior(timesBigger, duration) =>
+      for {
+        avgAmount <- getAverageTransactionAmount(transaction, duration)
+      } yield avgAmount match {
+        case Some(avg) =>
+          transaction.Amount / avg >= timesBigger
+        case None => false
+      }
+    case UndeclaredCountry(duration: FiniteDuration) =>
+      for {
+        declared <- checkForDeclaredThreshold(transaction)
+        total <- checkForTransactionSum(transaction, duration)
+        res <- Sync[F].delay(declared match {
+          case Some(decl) => total match {
+            case Some(tot) => tot > decl
+            case None => transaction.Amount > decl
+          }
+          case None => true
+        })
+      } yield res
     case And(left, right) => for {
       isLeft <- flag(left, transaction)
       isRight <- flag(right, transaction)

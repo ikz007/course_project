@@ -7,7 +7,7 @@ import doobie.Update
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import doobie.util.meta.Meta
-import fs2.kafka.commitBatchWithin
+
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import lv.scala.aml.common.dto.Transaction
@@ -17,7 +17,6 @@ import lv.scala.aml.database.utils.AmlRuleChecker
 import lv.scala.aml.kafka.{KafkaErrProduce, KafkaReceiver}
 
 import java.time.LocalDate
-import scala.concurrent.duration.DurationInt
 
 class TransactionTopicSubscriber[F[_]: Sync: Logger: ContextShift: ConcurrentEffect: Timer: Applicative](
   xa: HikariTransactor[F],
