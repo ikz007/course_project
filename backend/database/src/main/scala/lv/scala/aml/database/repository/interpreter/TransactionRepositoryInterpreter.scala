@@ -1,29 +1,19 @@
 package lv.scala.aml.database.repository.interpreter
 
-//import cats.Applicative
 import cats.data.OptionT
 import cats.effect.Sync
-import lv.scala.aml.common.dto.IBAN
-//import cats.effect.{ConcurrentEffect, ContextShift, Resource, Sync, Timer}
+import lv.scala.aml.common.dto.{IBAN, Questionnaire, Relationship, Transaction}
 import doobie.hikari.HikariTransactor
 import doobie.quill.DoobieContext.MySQL
-//import io.chrisdavenport.log4cats.Logger
 import io.getquill.CamelCase
 import io.getquill.context.jdbc.{Decoders, Encoders}
-import lv.scala.aml.common.dto.{Relationship, Transaction}
 import lv.scala.aml.database.Schema
 import lv.scala.aml.database.repository.TransactionRepository
 import doobie.implicits._
 import cats.syntax.all._
-//import lv.scala.aml.common.dto.responses.KafkaErrorMessage
-//import lv.scala.aml.config.KafkaConfig
-//import lv.scala.aml.kafka.Serdes._
-//import lv.scala.aml.kafka.{KafkaConsumer, KafkaErrorProducer}
 
 class TransactionRepositoryInterpreter [F[_]: Sync](
   xa: HikariTransactor[F],
-//  kafkaConsumer: KafkaConsumer[F, Transaction],
-//  kafkaErrorProducer: KafkaErrorProducer[F, KafkaErrorMessage],
   override val ctx: MySQL[CamelCase] with Decoders with Encoders
 ) extends TransactionRepository[F] with Schema{
   import ctx._
@@ -54,17 +44,13 @@ class TransactionRepositoryInterpreter [F[_]: Sync](
       .filter(_.Reference == lift(model.Reference))
       .update(lift(model))
   }).transact(xa).void
-}
 
-//object TransactionRepositoryInterpreter {
-//  def apply[F[_]: ConcurrentEffect : ContextShift : Timer : Applicative](
-//    xa: HikariTransactor[F],
-//    kafkaConfig: KafkaConfig,
-//    ctx: MySQL[CamelCase] with Decoders with Encoders
-//  ): Resource[F, TransactionRepositoryInterpreter[F]] = for {
-//    transactionConsumer <- KafkaConsumer.apply[F, Transaction](kafkaConfig)
-//    trnsErrorProducer <- KafkaErrorProducer.apply[F, KafkaErrorMessage](kafkaConfig)
-//  } yield new TransactionRepositoryInterpreter[F](xa, transactionConsumer, trnsErrorProducer,ctx)
-//
-//
-//}
+  override def getQuestTransactions(questId: String): F[List[Transaction]] =
+    run(quote {
+      query[Transaction]
+        .join(query[Relationship]).on(_.OurIBAN == _.IBAN)
+        .join(query[Questionnaire]).on{case ((trns, rel), quest) => rel.CustomerID == quest.CustomerID && trns.CountryCode == quest.Country }
+        .filter{case ((_, _), quest) => quest.Active && quest.QuestionnaireID == lift(questId)}
+        .map{case ((trns, _), _) => trns}
+    }).transact(xa)
+}

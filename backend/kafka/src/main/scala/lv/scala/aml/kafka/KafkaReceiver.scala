@@ -29,11 +29,11 @@ object KafkaReceiver {
       .flatMap(_.stream)
       // .groupWithin(1000, 1.minute) //if you want to micro batch
       .evalMap( consumerRecord => {
-        val kek = decodeTransactionJson(consumerRecord.record.value)
-          kek.fold( sendError, tr => saveTransaction(tr) *>  checkTransaction(tr) *> Sync[F].unit) *> Sync[F].delay(consumerRecord.offset)
+        decodeTransactionJson(consumerRecord.record.value)
+          .fold(
+            sendError,
+            tr => saveTransaction(tr) *>  checkTransaction(tr) *> Sync[F].unit) *> Sync[F].delay(consumerRecord.offset)
       })
       .through(commitBatchWithin(500, 5.seconds))
-      .compile
-      .drain
   }
 }

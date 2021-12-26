@@ -1,16 +1,15 @@
 package lv.scala.aml.common.dto
 
 import cats.data.Validated.{Invalid, Valid}
-import lv.scala.aml.common.dto.IBAN
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.{catsSyntaxOptionId, catsSyntaxTuple7Semigroupal}
 import io.circe._
 import io.circe.generic.semiauto._
 
-import java.time.{LocalDate, ZoneId, ZoneOffset}
+import java.time.{LocalDate, ZoneId}
 import scala.util.Try
 
-case class Transaction (
+final case class Transaction (
   OurIBAN: IBAN,
   TheirIBAN: IBAN,
   Reference: String,
@@ -62,9 +61,9 @@ object Transaction {
       }
 
     val validateDate: ErrorsOr[LocalDate] =
-      Try(LocalDate.ofInstant(nVTransaction.BookingDateTime, ZoneId.of(ZoneOffset.UTC.getId()))).toOption match {
+      Try(LocalDate.ofInstant(nVTransaction.BookingDateTime, ZoneId.of("GMT"))).toOption match {
         case Some(value) => Valid(value)
-        case None => Invalid(NonEmptyList.one(s"Couldnt parse the date: ${nVTransaction.BookingDateTime}"))
+        case None => Invalid(NonEmptyList.one(s"Couldn't parse the date: ${nVTransaction.BookingDateTime}"))
       }
 
     (

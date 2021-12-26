@@ -13,7 +13,7 @@ import doobie.implicits._
 import doobie.quill.DoobieContext.MySQL
 import io.getquill.CamelCase
 import io.getquill.context.jdbc.{Decoders, Encoders}
-import lv.scala.aml.common.dto.Alert
+import lv.scala.aml.common.dto.{Alert, IBAN, Relationship}
 import lv.scala.aml.database.Schema
 import lv.scala.aml.database.repository.AlertRepository
 
@@ -34,19 +34,23 @@ class AlertRepositoryInterpreter[F[_]: Sync](
   override def getCustomerAlerts(customerID: String): F[List[Alert]] =
     run(quote {
       query[Alert]
-        .filter(alert => alert.Subject == lift(customerID) && alert.SubjectType ==  lift("Customer"))
+        .join(query[Relationship])
+        .on(_.Iban == _.IBAN)
+        .filter(_._2.CustomerID == lift(customerID))
+        .map{ case (alert, _) => alert}
     }).transact(xa)
 
-  override def getAccountAlerts(IBAN: String): F[List[Alert]] =
+  override def getAccountAlerts(Iban: IBAN): F[List[Alert]] =
     run(quote {
       query[Alert]
-        .filter(alert => alert.Subject == lift(IBAN) && alert.SubjectType ==  lift("Account"))
+        .filter(alert => alert.Iban == lift(Iban))
     }).transact(xa)
-  override def getStream: fs2.Stream[F, Alert] =
-    sql"select AlertId, Subject, SubjectType, TransactionReferences, AlertedCondition, AlertedValue, cast(DateCreated as date), ScenarioName from Alert"
-      .query[Alert]
-      .stream
-      .transact(xa)
+
+  override def getTransactionAlerts(reference: String): F[List[Alert]] =
+    run(quote {
+            query[Alert]
+              .filter(alert => alert.TransactionReferences == lift(reference))
+          }).transact(xa)
 }
 object AlertRepositoryInterpreter {
 

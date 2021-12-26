@@ -48,34 +48,39 @@ function a11yProps(index) {
   };
 }
 
-const Transaction = (props) => {
+const Customer = (props) => {
   const [value, setValue] = React.useState(0);
   const params = useParams();
-  const [transaction, setTransaction] = useState(null);
+  const [customer, setCustomer] = useState(null);
   const [exists, setExists] = useState(true);
   const [alerts, setAlerts] = useState([]);
+  const [accounts, setAccounts] = useState([]);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
   useEffect(() => {
-    fetch('http://127.0.0.1:9000/transactions/' + params.id)
+    fetch('http://127.0.0.1:9000/customers/' + params.id)
     .then(data => data.json())
-    .then(trns => trns.success ? setTransaction(trns.result) : setExists(false) );
-    fetch('http://127.0.0.1:9000/alerts/transaction/' + params.id)
+    .then(cust => cust.success ? setCustomer(cust.result) : setExists(false) );
+    fetch('http://127.0.0.1:9000/alerts/customer/' + params.id)
     .then(data => data.json())
     .then(alrts => alrts.success ? setAlerts(alrts.result) : console.log("Failed to retrieve") );
+    fetch('http://127.0.0.1:9000/relationships/customer/' + params.id)
+    .then(data => data.json())
+    .then(acc => acc.success ? setAccounts(acc.result) : console.log("Failed to retrieve") );
   },[]);
 
   return (
     <>
-    {exists && transaction != null ?
+    {exists && customer != null ?
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
-          <Tab label="Transaction Card" {...a11yProps(0)} />
+          <Tab label="Customer Card" {...a11yProps(0)} />
           <Tab label="Alerts" {...a11yProps(1)} />
+          <Tab label="Accounts" {...a11yProps(2)} />
         </Tabs>
       </Box>
       <TabPanel value={value} index={0}>
@@ -86,64 +91,61 @@ const Transaction = (props) => {
       }}
       noValidate
     >
-      <div>
-       <Link href={'/accounts/' + transaction.OurIBAN.value} ><TextField
+        <TextField
           required
           disabled
           id="outlined-required"
-          label="OurIBAN"
-          value={transaction.OurIBAN?.value}
+          label="CustomerID"
+          value={customer.CustomerID}
         />
-        </Link>
         <TextField
           disabled
           id="outlined-disabled"
-          label="TheirIBAN"
-          value={transaction.TheirIBAN.value}
+          label="CustomerName"
+          defaultValue={customer.CustomerName}
         />
         <TextField
           id="outlined-password-input"
-          label="Amount"
+          label="MonthlyIncome"
           disabled
-          value={transaction.Amount}
+          value={customer.MonthlyIncome}
         />
          <TextField
           id="outlined-password-input"
-          label="Currency"
+          label="BusinessType"
           disabled
-          value={transaction.Currency}
+          value={customer.BusinessType}
         />
          <TextField
           id="outlined-password-input"
-          label="BookingDateTime"
+          label="BirthDate"
           disabled
-          value={transaction.BookingDateTime}
+          value={customer.BirthDate}
         />
          <TextField
           id="outlined-password-input"
-          label="CountryCode"
+          label="CountryOfBirth"
           disabled
-          value={transaction.CountryCode}
+          value={customer.CountryOfBirth}
         />
          <TextField
           id="outlined-password-input"
-          label="DebitCredit"
+          label="CountryOfResidence"
           disabled
-          value={transaction.DebitCredit}
+          value={customer.CountryOfResidence}
         />
         <TextField
           id="outlined-password-input"
-          label="TransactionCode"
+          label="PEP"
           disabled
-          value={transaction.TransactionCode}
+          value={customer.PEP}
         />
         <TextField
           id="outlined-password-input"
-          label="Description"
+          label="Status"
           disabled
-          value={transaction.Description}
+          value={customer.Status}
         />
-      </div>
       </Box>
       </TabPanel>
       <TabPanel value={value} index={1}>
@@ -166,9 +168,38 @@ const Transaction = (props) => {
                   <TableCell component="th" scope="row">
                     <Link href={'/alerts/' + row.AlertId}>{row.AlertId}</Link>
                   </TableCell>
-                  <TableCell align="right">{row.Iban.value}</TableCell>
+                  <TableCell align="right"><Link href={'/accounts/' + row.Iban.value}>{row.Iban.value}</Link></TableCell>
                   <TableCell align="right">{row.TransactionReferences}</TableCell>
                   <TableCell align="right">{row.DateCreated}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </TabPanel>
+      <TabPanel value={value} index={2}>
+      <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 650 }} aria-label="simple table">
+            <TableHead>
+              <TableRow>
+                <TableCell>IBAN</TableCell>
+                <TableCell align="right">BBAN</TableCell>
+                <TableCell align="right">AccountType</TableCell>
+                <TableCell align="right">Status</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {accounts.map((row) => (
+                <TableRow
+                  key={row.IBAN.value}
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    <Link href={'/accounts/' + row.IBAN.value}>{row.IBAN.value}</Link>
+                  </TableCell>
+                  <TableCell align="right">{row.BBAN}</TableCell>
+                  <TableCell align="right">{row.AccountType}</TableCell>
+                  <TableCell align="right">{row.Status}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -180,4 +211,4 @@ const Transaction = (props) => {
     </>
   );
 }
-export default Transaction;
+export default Customer;

@@ -1,7 +1,7 @@
 package lv.scala.aml.common.dto
 
 import io.circe._, io.circe.generic.semiauto._
-case class Questionnaire(
+final case class Questionnaire(
   QuestionnaireID: String,
   CustomerID: String,
   Country: String,

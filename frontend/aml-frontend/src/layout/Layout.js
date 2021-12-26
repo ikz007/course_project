@@ -15,10 +15,14 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
-import MailIcon from '@mui/icons-material/Mail';
+import Link from '@mui/material/Link';
 import { Outlet } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
+import PaidIcon from '@mui/icons-material/Paid';
+import PersonIcon from '@mui/icons-material/Person';
+import AddAlertIcon from '@mui/icons-material/AddAlert';
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 const drawerWidth = 240;
 
 const openedMixin = (theme) => ({
@@ -133,25 +137,56 @@ export default function Layout() {
         </DrawerHeader>
         <Divider />
         <List>
-          {['Customers', 'Accounts', 'Relationships', 'Transactions'].map((text, index) => (
+          {/* {['Customers', 'Accounts', 'Relationships', 'Transactions'].map((text, index) => (
             <ListItem button key={text}>
               <ListItemIcon>
                 {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
               </ListItemIcon>
               <ListItemText primary={text} />
             </ListItem>
-          ))}
-        </List>
-        <Divider />
-        <List>
-          {['All mail', 'Trash', 'Spam'].map((text, index) => (
-            <ListItem button key={text}>
+          ))} */}
+            <ListItem button key='Transactions'>
+              <Link href={'/transactions'}>
               <ListItemIcon>
-                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                <PaidIcon/>
               </ListItemIcon>
-              <ListItemText primary={text} />
+              </Link>
+              <ListItemText primary='Transactions' />
             </ListItem>
-          ))}
+
+            <ListItem button key='Customers'>
+              <Link href={'/customers'}>
+              <ListItemIcon>
+                <PersonIcon/>
+              </ListItemIcon>
+              </Link>
+              <ListItemText primary='Customers' />
+            </ListItem>
+            <ListItem button key='Accounts'>
+              <Link href={'/accounts'}>
+              <ListItemIcon>
+                <AccountBalanceIcon/>
+              </ListItemIcon>
+              </Link>
+              <ListItemText primary='Accounts' />
+            </ListItem>
+            <ListItem button key='Alerts'>
+              <Link href={'/alerts'}>
+              <ListItemIcon>
+                <AddAlertIcon/>
+              </ListItemIcon>
+              </Link>
+              <ListItemText primary='Alerts' />
+            </ListItem>
+            <Divider/>
+            <ListItem button key='Quests'>
+              <Link href={'/quests'}>
+              <ListItemIcon>
+                <QuestionMarkIcon/>
+              </ListItemIcon>
+              </Link>
+              <ListItemText primary='Quests' />
+            </ListItem>
         </List>
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>

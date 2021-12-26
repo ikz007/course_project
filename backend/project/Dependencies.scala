@@ -10,6 +10,7 @@ object Dependencies {
   private val scalaMockVersion = "5.1.0"
   private val kafkaVersion = "1.8.0"
   private val circeVersion = "0.14.1"
+  private val circeExtraVersion = "0.12.2"
   private val circeConfig = "0.8.0"
   private val doobieVersion = "0.9.4"
   private val slf4jVersion = "1.7.32"
@@ -35,6 +36,7 @@ object Dependencies {
     val CirceCore = "io.circe" %% "circe-core" % circeVersion
     val CirceGeneric = "io.circe" %% "circe-generic" % circeVersion
     val CirceConfig = "io.circe" %% "circe-config" % circeConfig
+    val CriceGenericExtra = "io.circe" %% "circe-generic-extras" % circeVersion
     val enumeratorCirce = "com.beachape" %% "enumeratum-circe" % enumeratumVersion
   }
 

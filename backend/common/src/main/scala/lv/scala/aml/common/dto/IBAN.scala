@@ -1,11 +1,10 @@
 package lv.scala.aml.common.dto
 
-import cats.data.{NonEmptyList, ValidatedNel}
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.generic.semiauto.deriveDecoder
+import io.circe.{Decoder, Encoder}
 
 @JsonCodec case class IBAN(value: String) extends AnyVal
 

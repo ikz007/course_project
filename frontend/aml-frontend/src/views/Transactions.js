@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react'
+import React, {useEffect, useState} from 'react';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -6,6 +6,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
+import Link from '@mui/material/Link';
 const Transactions = () => {
 
     const columns =[
@@ -19,7 +20,7 @@ const Transactions = () => {
     useEffect( () => {
         fetch('http://127.0.0.1:9000/transactions/all')
         .then(data => data.json())
-        .then(trns => setTransactions(trns))
+        .then(trns => trns.success ? setTransactions(trns.result) : console.log("Failed to retrieve") )
     }, []);
 
     return (
@@ -41,10 +42,10 @@ const Transactions = () => {
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
                   <TableCell component="th" scope="row">
-                    {row.Reference}
+                    <Link href={'transactions/' + row.Reference}>{row.Reference}</Link>
                   </TableCell>
-                  <TableCell align="right">{row.OurIBAN}</TableCell>
-                  <TableCell align="right">{row.TheirIBAN}</TableCell>
+                  <TableCell align="right">{row.OurIBAN.value}</TableCell>
+                  <TableCell align="right">{row.TheirIBAN.value}</TableCell>
                   <TableCell align="right">{row.Amount}</TableCell>
                   <TableCell align="right">{row.Currency}</TableCell>
                 </TableRow>

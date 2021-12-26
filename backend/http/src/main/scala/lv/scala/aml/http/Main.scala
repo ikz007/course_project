@@ -9,10 +9,11 @@ import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.getquill.CamelCase
 import io.getquill.context.jdbc.{Decoders, Encoders}
+import lv.scala.aml.common.dto.InvalidMessage
 import lv.scala.aml.config.Config
 import lv.scala.aml.database.repository.interpreter._
 import lv.scala.aml.database.utils.AmlRuleChecker
-import lv.scala.aml.database.{Database, ScenarioConfigRetriever, TransactionTopicSubscriber}
+import lv.scala.aml.database.{Database, DbInit, ScenarioConfigRetriever, TransactionTopicSubscriber}
 import lv.scala.aml.http.services._
 import lv.scala.aml.kafka.KafkaErrProduce
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
@@ -77,10 +78,9 @@ object Main extends IOApp{
     for {
       _ <- logger.info("Server starting...")
       config <- Config.load[IO]()
-      xa <- IO.pure(Database.buildTransactor[IO](Database.TransactorConfig(config.db)))
-     // _ <- DbInit.initialize[IO](xa)
-      scenarioSettings <- ScenarioConfigRetriever(xa).retrieveConfiguration
-      amlRuleChecker <- IO.delay(AmlRuleChecker[IO](xa, scenarioSettings))
+      xa <- IO.delay(Database.buildTransactor[IO](Database.TransactorConfig(config.db)))
+      _ <- DbInit.initialize[IO](xa)
+      amlRuleChecker <- AmlRuleChecker[IO](xa)
       kafkaErrProducer <- IO.delay(KafkaErrProduce[IO](config.kafka))
       _ <- new TransactionTopicSubscriber[IO](xa, config.kafka, kafkaErrProducer, amlRuleChecker).subscribe2.start
       exitCode <- stream(config,xa).compile.drain.map(_ => ExitCode.Success) // .use(_.lastOrError) //.compile.drain.map(_ => ExitCode.Success)

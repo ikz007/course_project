@@ -2,7 +2,7 @@ import Dependencies._
 
 lazy val root = (project in file("."))
   .aggregate(
-    http,database, common
+    http,database, kafka, common
   )
   .settings(
     name := "scala-aml",
@@ -53,12 +53,6 @@ lazy val database = (project in file("database"))
       Database.DoobieHikari,
       Database.DoobieQuill,
       Database.Quill,
-      Circe.CirceCore,
-      Circe.CirceConfig,
-      Circe.CirceGeneric,
-      Logging.Sl4j,
-      Logging.Sl4cats,
-      Logging.Sl4core,
       Database.h2DB
     )
   )
@@ -69,6 +63,7 @@ lazy val common = (project in file("common"))
       Circe.CirceCore,
       Circe.CirceConfig,
       Circe.CirceGeneric,
+      Circe.CriceGenericExtra,
       Cats.CatsEffect,
       Http4s.Circe,
       ScalaTest.ScalaTest,
@@ -78,7 +73,10 @@ lazy val common = (project in file("common"))
       ScalaTest.munitCatsTest,
       ScalaTest.doobieScalaTest,
       Enum.enumerator,
-      Circe.enumeratorCirce
+      Circe.enumeratorCirce,
+      Logging.Sl4j,
+      Logging.Sl4cats,
+      Logging.Sl4core
     )
   )
 
@@ -89,10 +87,7 @@ lazy val kafka = (project in file("kafka"))
       Kafka.fs2Kafka,
       Cats.CatsCore,
       Cats.CatsEffect,
-      Database.DoobieQuill,
-      Logging.Sl4j,
-      Logging.Sl4cats,
-      Logging.Sl4core
+      Database.DoobieQuill
     )
   )
 

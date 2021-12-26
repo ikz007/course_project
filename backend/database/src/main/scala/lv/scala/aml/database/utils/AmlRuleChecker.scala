@@ -3,17 +3,16 @@ package lv.scala.aml.database.utils
 import cats.Applicative
 import cats.effect.{ConcurrentEffect, ContextShift, Sync, Timer}
 import cats.implicits._
-import doobie.implicits._
 import doobie.hikari.HikariTransactor
+import doobie.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import lv.scala.aml.common.dto.{IBAN, Transaction}
 import lv.scala.aml.common.dto.rules.AmlRule
-import lv.scala.aml.common.dto.rules.AmlRule.{And, HighRiskCountryCheck, KeywordCheck, Rule, TransactionExceeds}
-import lv.scala.aml.common.dto.scenario.ScenarioConfiguration
+import lv.scala.aml.common.dto.rules.AmlRule._
+import lv.scala.aml.common.dto.{IBAN, Transaction}
 
 
-final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffect: Timer: Applicative](
+final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffect: Applicative](
   xa: HikariTransactor[F],
   rules:Seq[AmlRule]
 ) {
@@ -21,23 +20,24 @@ final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffe
 
   def check(
     transaction: Transaction
-  ): F[Unit]  = rules.map(flag(_, transaction)).sequence.void
+  ): F[Unit]  =
+    rules.map(rule =>
+      for {
+        r <- flag(rule, transaction)
+        _ <- insertAlert(r, ruleToJson(rule), transaction)
+      } yield ()
+    ).sequence.void
 
   private def insertAlert(
     generate: Boolean,
     alertedCondition: String,
-    alertedValue: String,
-    transactionReference: String,
-    subject: IBAN,
-    scenarioName: String = "RealTime",
-    subjectType: String = "Account"
+    transaction: Transaction
   ): F[Unit] = {
     if(generate) {
       sql"""insert into Alert
-        (Subject, SubjectType, TransactionReferences,
-        AlertedCondition, AlertedValue, DateCreated,
-        ScenarioName)
-        values (${subject.value}, $subjectType, $transactionReference, $alertedCondition, $alertedValue, NOW(), $scenarioName);
+        (Iban, TransactionReferences,
+        AlertedCondition, DateCreated)
+        values (${transaction.OurIBAN}, ${transaction.Reference}, $alertedCondition, NOW());
         """.update.withUniqueGeneratedKeys[Int]("AlertId")
         .transact(xa)
         .map(_ => ())
@@ -51,30 +51,36 @@ final case class AmlRuleChecker[F[_]: Sync: Logger: ContextShift: ConcurrentEffe
 
   }
 
-  private def flag(
+  private[database] def flag(
     rule:AmlRule,
     transaction:Transaction
-  )
-  //db objects or transactor
-  : F[Unit] = rule match {
+  ): F[Boolean] = rule match {
     case TransactionExceeds(amount) =>
-      insertAlert(transaction.Amount > amount, "TransactionExceeds", transaction.Amount.toString(), transaction.Reference, transaction.OurIBAN)
+      Sync[F].delay(transaction.Amount > amount)
     case HighRiskCountryCheck(countries) =>
-      insertAlert(countries.contains(transaction.CountryCode), "HighRiskCountryCheck", transaction.CountryCode, transaction.Reference, transaction.OurIBAN)
+      Sync[F].delay(countries.contains(transaction.CountryCode))
     case KeywordCheck(keywords) =>
-      insertAlert(keywords.exists(transaction.Description.contains(_)), "KeywordCheck", transaction.Description.getOrElse(""), transaction.Reference, transaction.OurIBAN)
+      Sync[F].delay(keywords.exists(transaction.Description.contains(_)))
+    case And(left, right) => for {
+      isLeft <- flag(left, transaction)
+      isRight <- flag(right, transaction)
+    } yield isLeft && isRight
+    case Or(left, right) => for {
+      isLeft <- flag(left, transaction)
+      isRight <- flag(right, transaction)
+    } yield isLeft || isRight
   }
 }
 object AmlRuleChecker{
-  def apply[F[_]: Sync: Logger: ContextShift: ConcurrentEffect: Timer: Applicative](
-    xa: HikariTransactor[F],
-    scenarioConfiguration: ScenarioConfiguration
-  ):AmlRuleChecker[F] = {
-    val rules = Seq(
-      TransactionExceeds(scenarioConfiguration.defaultMaxThreshold),
-      HighRiskCountryCheck(scenarioConfiguration.highRiskCountries),
-      KeywordCheck(scenarioConfiguration.keywords)
-    )
-    new AmlRuleChecker[F](xa, rules)
+  def apply[F[_]: Sync: Logger: ContextShift: ConcurrentEffect: Applicative](
+    xa: HikariTransactor[F]
+  ):F[AmlRuleChecker[F]] = {
+    for {
+      rules <- retrieveRulesFromDB(xa)
+      parsed <- Sync[F].delay(rules.flatMap(jsonToRule))
+    } yield new AmlRuleChecker[F](xa, parsed)
   }
+
+  private def retrieveRulesFromDB[F[_]: Sync](xa: HikariTransactor[F]): F[Seq[String]] =
+    sql"""SELECT RuleJson FROM RuleTable""".query[String].to[Seq].transact(xa)
 }

@@ -1,11 +1,14 @@
 package lv.scala.aml.common
 
+import cats.data.Validated
 import cats.implicits.{catsSyntaxOptionId, none}
 import lv.scala.aml.common.dto.parser.TransactionParser
-import lv.scala.aml.common.dto.{IBAN, IBANHandler}
+import lv.scala.aml.common.dto.{IBAN, IBANHandler, NotValidatedTransaction, Transaction}
 import org.scalatest.EitherValues
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+
+import java.time.{LocalDate, ZoneId, ZoneOffset}
 class BusinessObjectValidationSpec extends AnyWordSpec with Matchers with EitherValues {
   "Business objects" should {
     "successfully parse transaction" in {
@@ -41,6 +44,17 @@ class BusinessObjectValidationSpec extends AnyWordSpec with Matchers with Either
       val iban2 = "LV7420041010050500"
       IBANHandler.validate(iban1).toOption must be(none)
       IBANHandler.validate(iban2).toOption must be(none)
+    }
+
+    "nvTransaction to Transaction" in {
+      val localDate = LocalDate.now().atStartOfDay(ZoneId.of(ZoneOffset.UTC.getId()))
+      val nvTrns = NotValidatedTransaction("FR1420041010050500013", "FR1420041010050500013", "24", "CRDT", localDate.toInstant, "D", BigDecimal(23.457), "EUR", "Descr", "LV")
+      Transaction(nvTrns) match {
+        case Validated.Valid(tr) =>
+          tr.Reference must be(nvTrns.Reference)
+          tr.BookingDateTime must be(localDate.toLocalDate)
+        case Validated.Invalid(e) => fail(e.toString())
+      }
     }
   }
 }

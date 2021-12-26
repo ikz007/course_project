@@ -7,4 +7,5 @@ trait TransactionRepository[F[_]] extends BussinessObjectRepository[F, Transacti
   def getCustomerTransactions(customerID : String): F[List[Transaction]]
   def getAccountTransactions(iban: IBAN): F[List[Transaction]]
   def getById(id: String): OptionT[F, Transaction]
+  def getQuestTransactions(questId: String): F[List[Transaction]]
 }

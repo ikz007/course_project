@@ -5,7 +5,7 @@ import io.circe.{Decoder, Encoder}
 
 import java.time.Instant
 
-case class NotValidatedTransaction(
+final case class NotValidatedTransaction(
   OurIBAN: String,
   TheirIBAN: String,
   Reference: String,

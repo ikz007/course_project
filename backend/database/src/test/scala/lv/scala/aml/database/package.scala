@@ -10,11 +10,11 @@ import scala.concurrent.ExecutionContext
 package object database {
   implicit val contextShift = IO.contextShift(ExecutionContext.global)
 
-  def getTransactor[F[_]: Sync : Async : ContextShift]: F[HikariTransactor[F]] =
+  def getTransactor: IO[HikariTransactor[IO]] =
       for {
-      config <- Config.load[F]
-      xa <- Sync[F].pure(Database.buildTransactor[F](Database.TransactorConfig(config.db)))
+      config <- Config.load[IO]
+      xa <- IO.pure(Database.buildTransactor[IO](Database.TransactorConfig(config.db)))
     } yield xa
 
-  lazy val testTransactor: HikariTransactor[IO] = getTransactor[IO].unsafeRunSync()
+  lazy val testTransactor: HikariTransactor[IO] = getTransactor.unsafeRunSync()
 }

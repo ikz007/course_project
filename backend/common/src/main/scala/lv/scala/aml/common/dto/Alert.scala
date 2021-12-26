@@ -7,11 +7,9 @@ import java.time.LocalDate
 
 final case class Alert (
   AlertId: Int,
-  Subject: String,
-  SubjectType: String,
+  Iban: IBAN,
   TransactionReferences: String,
   AlertedCondition: String,
-  AlertedValue: String,
   DateCreated: LocalDate
 )
 
