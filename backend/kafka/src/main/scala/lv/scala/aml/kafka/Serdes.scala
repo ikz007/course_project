@@ -8,7 +8,9 @@ import io.circe.syntax._
 
 import java.nio.ByteBuffer
 
-// custom Encoder/Decoder for types not supported by fs2.kafka
+/*
+  custom Encoder/Decoder for types not supported by fs2.kafka
+ */
 object Serdes {
   type Attempt[T] = Either[Throwable, T]
 

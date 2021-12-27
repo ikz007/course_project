@@ -1,6 +1,6 @@
 package lv.scala.aml.database
 
-import cats.effect.{IO, Sync}
+import cats.effect.Sync
 import doobie.hikari.HikariTransactor
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.configuration.FluentConfiguration

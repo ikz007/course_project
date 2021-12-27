@@ -1,15 +1,15 @@
 package lv.scala.aml.database.utils
 
 import cats.Applicative
-import cats.effect.{ConcurrentEffect, ContextShift, Sync, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, Sync}
 import cats.implicits._
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import lv.scala.aml.common.dto.Transaction
 import lv.scala.aml.common.dto.rules.AmlRule
 import lv.scala.aml.common.dto.rules.AmlRule._
-import lv.scala.aml.common.dto.{IBAN, Transaction}
 
 import java.time.Instant
 import scala.concurrent.duration.FiniteDuration

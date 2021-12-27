@@ -43,7 +43,7 @@ const Quests = () => {
                   </TableCell>
                   <TableCell align="right">{row.Country}</TableCell>
                   <TableCell align="right">{row.MonthlyTurnover}</TableCell>
-                  <TableCell align="right">{row.Active}</TableCell>
+                  <TableCell align="right">{row.Active ? "true" : "false"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -16,7 +16,7 @@ import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
-import java.time.{Instant, LocalDate, ZoneId, ZoneOffset}
+import java.time.Instant
 import scala.concurrent.ExecutionContext
 
 
@@ -28,14 +28,15 @@ class KafkaErrorProducerSpec extends AsyncFreeSpec with AsyncIOSpec with Matcher
     "should receive a message when published" in {
       val nvTrns = NotValidatedTransaction("FR1420041010050500014", "FR1420041010050500014", "24", "CRDT", Instant.now(), "D", BigDecimal(23.457), "EUR", "Descr", "LV")
       val trns = Transaction(nvTrns).getOrElse(fail("Failed to parse"))
-      for {
+      (for {
         q <- Queue.unbounded[IO, Unit]
         ref <- Ref.of[IO, Option[Transaction]](none)
         _ <- KafkaProducerSpec(testConfig.kafka).streamProduce(nvTrns)
         _ <- KafkaReceiver.create[IO](testConfig.kafka)(TransactionParser.parseJson, _ => IO.unit, tr => ref.set(tr.some), _ => IO.unit)
         .through(q.enqueue).compile.drain.start.bracket(_ => q.dequeue1)(_.cancel)
         res <- ref.get
-      } yield res shouldBe trns.some
+      } yield res).asserting(_ shouldBe trns.some)
+
     }
     "should receive an Error message when published" in {
       val invalidMessage = InvalidMessage("error", "error")
@@ -55,7 +56,7 @@ class KafkaErrorProducerSpec extends AsyncFreeSpec with AsyncIOSpec with Matcher
           .take(1)
           .compile
           .lastOrError
-      } yield res).asserting(err => err.record.value shouldBe "{\"message\":\"error\",\"err\":\"error\"}")
+      } yield res).asserting(_.record.value shouldBe "{\"message\":\"error\",\"err\":\"error\"}")
     }
   }
 }

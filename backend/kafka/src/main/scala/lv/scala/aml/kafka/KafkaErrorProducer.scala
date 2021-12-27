@@ -13,7 +13,7 @@ class KafkaErrProduce[F[_]: ConcurrentEffect : ContextShift : Timer : Applicativ
   kafkaConfig: KafkaConfig,
   kafkaStream: fs2.Stream[F, KafkaProducer[F, Unit, InvalidMessage]]
 ) {
-  // initialize one time
+
   def streamProduce(message: InvalidMessage) =
    kafkaStream.evalMap{ producer =>
       val rs = ProducerRecords.one(ProducerRecord(kafkaConfig.producerTopic, (), message))

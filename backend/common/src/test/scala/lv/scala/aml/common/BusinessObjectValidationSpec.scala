@@ -21,7 +21,7 @@ class BusinessObjectValidationSpec extends AnyWordSpec with Matchers with Either
       val transactionJson = "abc"
       val parse = TransactionParser.parseJson(transactionJson)
       parse match {
-        case Left(value) => succeed
+        case Left(_) => succeed
         case Right(value) => fail(value.toString)
       }
     }

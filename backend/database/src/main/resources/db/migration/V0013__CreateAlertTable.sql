@@ -3,6 +3,6 @@ CREATE TABLE IF NOT EXISTS Alert (
     Iban VARCHAR(50) NOT NULL,
     TransactionReferences VARCHAR(500) NOT NULL,
     AlertedCondition VARCHAR(2000) NOT NULL,
-    DateCreated VARCHAR(25) NOT NULL,
+    DateCreated VARCHAR(30) NOT NULL,
     PRIMARY KEY ( AlertId )
 );

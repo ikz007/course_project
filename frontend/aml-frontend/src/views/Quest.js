@@ -15,6 +15,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Link from '@mui/material/Link';
+import Loader from 'react-loader-spinner';
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -54,6 +55,7 @@ const Quest = (props) => {
   const [transactions, setTransactions] = useState([]);
   const [exists, setExists] = useState(true);
   const [quest, setQuest] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -62,7 +64,10 @@ const Quest = (props) => {
   useEffect(() => {
     fetch('http://127.0.0.1:9000/quests/' + params.id)
     .then(data => data.json())
-    .then(que => que.success ? setQuest(que.result) : setExists(false) );
+    .then(que => {
+        que.success ? setQuest(que.result) : setExists(false) 
+        setLoading(false);
+    });
     fetch('http://127.0.0.1:9000/transactions/quest/' + params.id)
     .then(data => data.json())
     .then(trns => trns.success ? setTransactions(trns.result) : console.log("Failed to retrieve") );
@@ -70,7 +75,8 @@ const Quest = (props) => {
 
   return (
     <>
-    {exists && quest != null ?
+    {loading && <Loader/>}
+    {exists && !loading ?
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
@@ -131,7 +137,7 @@ const Quest = (props) => {
           id="outlined-password-input"
           label="Active"
           disabled
-          value={quest.Active}
+          value={quest.Active ? "true" : "false"}
         />
       </Box>
       </TabPanel>

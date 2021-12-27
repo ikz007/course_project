@@ -15,6 +15,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Link from '@mui/material/Link';
+import Loader from 'react-loader-spinner';
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -49,12 +50,14 @@ function a11yProps(index) {
 }
 
 const Customer = (props) => {
+  const [loading, setLoading] = useState(true);
   const [value, setValue] = React.useState(0);
   const params = useParams();
   const [customer, setCustomer] = useState(null);
   const [exists, setExists] = useState(true);
   const [alerts, setAlerts] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [quests, setQuests] = useState([]);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -63,24 +66,33 @@ const Customer = (props) => {
   useEffect(() => {
     fetch('http://127.0.0.1:9000/customers/' + params.id)
     .then(data => data.json())
-    .then(cust => cust.success ? setCustomer(cust.result) : setExists(false) );
+    .then( cust => 
+        {(cust.success ? setCustomer(cust.result) : setExists(false))
+        setLoading(false)
+        }
+    );
     fetch('http://127.0.0.1:9000/alerts/customer/' + params.id)
     .then(data => data.json())
     .then(alrts => alrts.success ? setAlerts(alrts.result) : console.log("Failed to retrieve") );
     fetch('http://127.0.0.1:9000/relationships/customer/' + params.id)
     .then(data => data.json())
     .then(acc => acc.success ? setAccounts(acc.result) : console.log("Failed to retrieve") );
+    fetch('http://127.0.0.1:9000/quests/customer/' + params.id)
+    .then(data => data.json())
+    .then(que => que.success ? setQuests(que.result) : console.log("Failed to retrieve") );
   },[]);
 
   return (
     <>
-    {exists && customer != null ?
+    {loading && <Loader/>}
+    {exists && !loading ?
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
           <Tab label="Customer Card" {...a11yProps(0)} />
           <Tab label="Alerts" {...a11yProps(1)} />
           <Tab label="Accounts" {...a11yProps(2)} />
+          <Tab label="Quests" {...a11yProps(3)} />
         </Tabs>
       </Box>
       <TabPanel value={value} index={0}>
@@ -191,15 +203,48 @@ const Customer = (props) => {
             <TableBody>
               {accounts.map((row) => (
                 <TableRow
-                  key={row.IBAN.value}
+                  key={row.IBAN?.value}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
                   <TableCell component="th" scope="row">
-                    <Link href={'/accounts/' + row.IBAN.value}>{row.IBAN.value}</Link>
+                    <Link href={'/accounts/' + row.IBAN?.value}>{row.IBAN?.value}</Link>
                   </TableCell>
                   <TableCell align="right">{row.BBAN}</TableCell>
                   <TableCell align="right">{row.AccountType}</TableCell>
                   <TableCell align="right">{row.Status}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </TabPanel>
+      <TabPanel value={value} index={3}>
+      <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 650 }} aria-label="simple table">
+            <TableHead>
+              <TableRow>
+                <TableCell>QuestionnaireID</TableCell>
+                <TableCell align="right">CustomerID</TableCell>
+                <TableCell align="right">Country</TableCell>
+                <TableCell align="right">MonthlyTurnover</TableCell>
+                <TableCell align="right">Active</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {quests.map((row) => (
+                <TableRow
+                  key={row.QuestionnaireID}
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    <Link href={'/quests/' + row.QuestionnaireID}>{row.QuestionnaireID}</Link>
+                  </TableCell>
+                  <TableCell align="right">
+                  <Link href={'/customers/' + row.CustomerID}>{row.CustomerID}</Link>
+                  </TableCell>
+                  <TableCell align="right">{row.Country}</TableCell>
+                  <TableCell align="right">{row.MonthlyTurnover}</TableCell>
+                  <TableCell align="right">{row.Active ? "true" : "false"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

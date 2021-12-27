@@ -2,11 +2,6 @@ package lv.scala.aml.database.repository.interpreter
 
 import cats.data.OptionT
 import cats.effect.Sync
-import doobie.util.meta.Meta
-
-import java.time.{Instant, LocalDate}
-import java.util.Date
-import doobie.implicits.javasql._
 import cats.syntax.all._
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
@@ -51,7 +46,11 @@ class AlertRepositoryInterpreter[F[_]: Sync](
             query[Alert]
               .filter(alert => alert.TransactionReferences == lift(reference))
           }).transact(xa)
-}
-object AlertRepositoryInterpreter {
 
+  override def update(model: Alert): F[Unit] =
+    run(quote {
+      query[Alert]
+        .filter(_.AlertId == lift(model.AlertId))
+        .update(lift(model))
+    }).transact(xa).void
 }

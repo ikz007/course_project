@@ -16,7 +16,7 @@ object KafkaReceiver {
   (decodeTransactionJson: String => Either[InvalidMessage, Transaction],
    sendError:  InvalidMessage => F[Unit],
    saveTransaction: Transaction => F[Unit],
-   checkTransaction: Transaction => F[Unit], // if rules succeeds sends to another kafka or sets flag in db
+   checkTransaction: Transaction => F[Unit],
   ) = {
     val consumerSettings = ConsumerSettings[F, Unit, String]
       .withAutoOffsetReset(AutoOffsetReset.Earliest)
@@ -27,7 +27,6 @@ object KafkaReceiver {
     fs2.kafka.KafkaConsumer.stream(consumerSettings)
       .evalTap(_.subscribeTo(kafkaConfig.consumerTopic))
       .flatMap(_.stream)
-      // .groupWithin(1000, 1.minute) //if you want to micro batch
       .evalMap( consumerRecord => {
         decodeTransactionJson(consumerRecord.record.value)
           .fold(

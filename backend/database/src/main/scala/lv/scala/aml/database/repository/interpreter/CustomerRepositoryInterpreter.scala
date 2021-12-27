@@ -8,14 +8,14 @@ import io.getquill.CamelCase
 import io.getquill.context.jdbc.{Decoders, Encoders}
 import lv.scala.aml.common.dto.Customer
 import lv.scala.aml.database.Schema
-import lv.scala.aml.database.repository.CustomerRepository
+import lv.scala.aml.database.repository.{BussinessObjectRepository, GetByIdRepository}
 import doobie.implicits._
 import cats.syntax.all._
 
 class CustomerRepositoryInterpreter[F[_]: Sync: Logger](
   xa: HikariTransactor[F],
   override val ctx: MySQL[CamelCase] with Decoders with Encoders
-) extends CustomerRepository[F] with Schema{
+) extends BussinessObjectRepository[F, Customer] with GetByIdRepository[F, String, Customer] with Schema{
   import ctx._
 
   override def get: F[List[Customer]] = run(quote {

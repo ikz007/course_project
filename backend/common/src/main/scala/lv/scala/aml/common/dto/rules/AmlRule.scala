@@ -32,8 +32,6 @@ object AmlRule{
   final case class UnexpectedBehavior(timesBigger: Int, duration: FiniteDuration) extends AmlRule
   final case class UndeclaredCountry(duration: FiniteDuration) extends AmlRule
 
-  final case class Rule(ruleName: String, alertedValue: String, generate: Boolean)
-
   def jsonToRule: String => Option[AmlRule] =
     decode[AmlRule](_).toOption
 

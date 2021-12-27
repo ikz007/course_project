@@ -3,10 +3,15 @@ package lv.scala.aml.http.services
 import cats.data.{OptionT, Validated}
 import cats.effect.{Concurrent, Sync}
 import cats.syntax.all._
+import doobie.hikari.HikariTransactor
+import doobie.quill.DoobieContext.MySQL
+import io.chrisdavenport.log4cats.Logger
 import io.circe.syntax._
+import io.getquill.CamelCase
+import io.getquill.context.jdbc.{Decoders, Encoders}
 import lv.scala.aml.common.dto.responses.ErrorType._
+import lv.scala.aml.common.dto.responses.HttpResponse
 import lv.scala.aml.common.dto.{Alert, IBAN, IBANHandler}
-import lv.scala.aml.common.dto.responses.{ErrorType, HttpResponse}
 import lv.scala.aml.database.repository.interpreter.AlertRepositoryInterpreter
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
@@ -14,7 +19,7 @@ import org.http4s.dsl.Http4sDsl
 
 import scala.util.{Failure, Success, Try}
 
-class AlertService[F[_]: Sync : Concurrent](
+class AlertService[F[_]: Sync : Concurrent : Logger](
   alertRepo: AlertRepositoryInterpreter[F]
 ) extends Http4sDsl[F] {
   private def get: F[List[Alert]] = alertRepo.get
@@ -32,7 +37,7 @@ class AlertService[F[_]: Sync : Concurrent](
         }
       case _ @ GET -> Root / "alerts" / id =>
         Try(id.toInt) match {
-          case Failure(_) => BadRequest(HttpResponse(false, UpdateFailed.value))
+          case Failure(_) => BadRequest(HttpResponse(false, FailedToParse.value))
           case Success(alertId) => getById(alertId).value.flatMap {
             case Some(alert) => Ok(HttpResponse(true, alert.asJson))
             case None => NotFound(HttpResponse(false, BusinessObjectNotFound.value))
@@ -59,9 +64,12 @@ class AlertService[F[_]: Sync : Concurrent](
     }
 
 }
-
 object AlertService {
-  def apply[F[_]: Sync : Concurrent](
-    alertRepo: AlertRepositoryInterpreter[F]
-  ): AlertService[F] = new AlertService[F](alertRepo)
+  def apply[F[_]: Sync: Logger : Concurrent](
+    transactor: HikariTransactor[F],
+    ctx: MySQL[CamelCase] with Decoders with Encoders
+  ): AlertService[F] = {
+    val repository = new AlertRepositoryInterpreter[F](transactor, ctx)
+    new AlertService[F](repository)
+  }
 }

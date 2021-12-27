@@ -13,7 +13,7 @@ class KafkaProducerSpec(
   kafkaStream: fs2.Stream[IO, KafkaProducer[IO, Unit, NotValidatedTransaction]]
 ) {
   // initialize one time
-  def streamProduce(message: NotValidatedTransaction, topic: String = kafkaConfig.producerTopic) =
+  def streamProduce(message: NotValidatedTransaction, topic: String = kafkaConfig.consumerTopic) =
     kafkaStream.evalMap{ producer =>
       val rs = ProducerRecords.one(ProducerRecord(topic, (), message))
       producer.produce(rs).flatten }.compile.drain

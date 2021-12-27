@@ -2,7 +2,12 @@ package lv.scala.aml.http.services
 import cats.data.OptionT
 import cats.effect.Sync
 import cats.syntax.all._
+import doobie.hikari.HikariTransactor
+import doobie.quill.DoobieContext.MySQL
+import io.chrisdavenport.log4cats.Logger
 import io.circe.syntax._
+import io.getquill.CamelCase
+import io.getquill.context.jdbc.{Decoders, Encoders}
 import lv.scala.aml.common.dto.Customer
 import lv.scala.aml.common.dto.responses.{ErrorType, HttpResponse}
 import lv.scala.aml.database.repository.interpreter.CustomerRepositoryInterpreter
@@ -35,7 +40,11 @@ class CustomerService [F[_]: Sync](
 }
 
 object CustomerService {
-  def apply[F[_]: Sync](
-    customerRepositoryInterpreter: CustomerRepositoryInterpreter[F]
-  ): CustomerService[F] = new CustomerService[F](customerRepositoryInterpreter)
+  def apply[F[_]: Sync: Logger](
+    transactor: HikariTransactor[F],
+    ctx: MySQL[CamelCase] with Decoders with Encoders
+  ): CustomerService[F] = {
+    val repository = new CustomerRepositoryInterpreter[F](transactor, ctx)
+    new CustomerService[F](repository)
+  }
 }

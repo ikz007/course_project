@@ -15,6 +15,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Link from '@mui/material/Link';
+import Loader from 'react-loader-spinner';
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -54,6 +55,7 @@ const Transaction = (props) => {
   const [transaction, setTransaction] = useState(null);
   const [exists, setExists] = useState(true);
   const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -62,7 +64,10 @@ const Transaction = (props) => {
   useEffect(() => {
     fetch('http://127.0.0.1:9000/transactions/' + params.id)
     .then(data => data.json())
-    .then(trns => trns.success ? setTransaction(trns.result) : setExists(false) );
+    .then(trns => {
+        trns.success ? setTransaction(trns.result) : setExists(false) 
+        setLoading(false)
+    });
     fetch('http://127.0.0.1:9000/alerts/transaction/' + params.id)
     .then(data => data.json())
     .then(alrts => alrts.success ? setAlerts(alrts.result) : console.log("Failed to retrieve") );
@@ -70,7 +75,8 @@ const Transaction = (props) => {
 
   return (
     <>
-    {exists && transaction != null ?
+    {loading && <Loader/>}
+    {exists && !loading ?
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">

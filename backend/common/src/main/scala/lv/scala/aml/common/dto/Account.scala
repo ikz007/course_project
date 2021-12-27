@@ -1,8 +1,7 @@
 package lv.scala.aml.common.dto
 
-import io.circe.generic.JsonCodec
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder}
 
 import java.time.LocalDate
 

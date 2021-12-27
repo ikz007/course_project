@@ -1,15 +1,12 @@
 package lv.scala.aml.database
 
-import cats.Id
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import lv.scala.aml.database.utils.AmlRuleChecker
-import cats.implicits._
 import lv.scala.aml.common.dto.parser.TransactionParser
 import lv.scala.aml.common.dto.rules.AmlRule.TransactionExceeds
-import lv.scala.aml.common.dto.{NotValidatedTransaction, Transaction}
+import lv.scala.aml.database.utils.AmlRuleChecker
 import org.scalatest.EitherValues
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.must.Matchers
@@ -30,7 +27,7 @@ class AmlRuleCheckerSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers wi
       (for {
         ruleChecker <- IO(new AmlRuleChecker[IO](testTransactor, Seq(transactionExceeds)))
         res <- ruleChecker.flag(transactionExceeds, transaction)
-      } yield res).asserting(s => s shouldBe true)
+      } yield res).asserting(_ shouldBe true)
     }
   }
 }

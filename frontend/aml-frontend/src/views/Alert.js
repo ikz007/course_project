@@ -7,13 +7,7 @@ import Box from '@mui/material/Box';
 import { useParams } from "react-router";
 import NotFound from './NotFound';
 import TextField from '@mui/material/TextField';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
+import Loader from 'react-loader-spinner';
 import Link from '@mui/material/Link';
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -53,6 +47,7 @@ const Alert = (props) => {
   const params = useParams();
   const [exists, setExists] = useState(true);
   const [alert, setAlert] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -61,12 +56,16 @@ const Alert = (props) => {
   useEffect(() => {
     fetch('http://127.0.0.1:9000/alerts/' + params.id)
     .then(data => data.json())
-    .then(cust => cust.success ? setAlert(cust.result) : setExists(false) );
+    .then(cust => {
+        cust.success ? setAlert(cust.result) : setExists(false)
+        setLoading(false)
+    } );
   },[]);
 
   return (
     <>
-    {exists && alert != null ?
+    {loading && <Loader/>}
+    {exists && !loading ?
     <Box sx={{ width: '100%' }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
