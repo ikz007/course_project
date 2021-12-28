@@ -2,7 +2,7 @@ package lv.scala.aml.http
 
 import cats.effect.IO
 import cats.implicits.{catsSyntaxOptionId, none}
-import lv.scala.aml.common.dto.{Account, Alert}
+import lv.scala.aml.common.dto.{Account, Alert, Questionnaire}
 import lv.scala.aml.common.dto.responses.ErrorType.FailedToParse
 import lv.scala.aml.common.dto.responses.HttpResponse
 import org.http4s._
@@ -51,6 +51,24 @@ class HttpSpec extends AnyFreeSpec with Matchers with EitherValues{
         validAlertResponseIO,
         Status.NotFound,
         none
+      )
+    }
+    "test get questionnaire endpoint" in {
+      val invalidQuestResponseIO = Main.makeRouter(testTransactor).run(
+        Request(method = Method.GET, uri = uri"/quests/abc")
+      )
+      validate[HttpResponse[String]](
+        invalidQuestResponseIO,
+        Status.NotFound,
+        none
+      )
+      val validAlertResponseIO = Main.makeRouter(testTransactor).run(
+        Request(method = Method.GET, uri = uri"/quests/1")
+      )
+      validate[HttpResponse[Questionnaire]](
+        validAlertResponseIO,
+        Status.Ok,
+        HttpResponse(true, Questionnaire("1", "000001", "FR", 10000, 13000, "Relatives", true)).some
       )
     }
   }

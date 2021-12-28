@@ -7,6 +7,7 @@ import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import lv.scala.aml.common.dto.Exceptions.FailedToParseAmlRule
 import lv.scala.aml.common.dto.Transaction
 import lv.scala.aml.common.dto.rules.AmlRule
 import lv.scala.aml.common.dto.rules.AmlRule._
@@ -84,10 +85,14 @@ final case class AmlRuleChecker[F[_]: Sync : Logger: ContextShift: ConcurrentEff
       res <-
         sql"""
           SELECT sum(Amount)
-          FROM Transaction
-          WHERE BookingDateTime >= ${timeNow.toString}
-          AND OurIBAN = ${transaction.OurIBAN}
-          AND CountryCode = ${transaction.CountryCode}
+          FROM Transaction t
+          INNER JOIN Relationship r
+            ON t.OurIBAN = r.IBAN
+          INNER JOIN Relationship r2
+            ON r.CustomerID = r2.CustomerID
+          WHERE t.BookingDateTime >= ${timeNow.toString}
+          AND r2.IBAN = ${transaction.OurIBAN}
+          AND t.CountryCode = ${transaction.CountryCode}
            """.query[BigDecimal].option.transact(xa)
     } yield res
 
@@ -137,7 +142,7 @@ object AmlRuleChecker{
   ):F[AmlRuleChecker[F]] = {
     for {
       rules <- retrieveRulesFromDB(xa)
-      parsed <- Sync[F].delay(rules.flatMap(jsonToRule))
+      parsed <- Sync[F].delay(rules.map(jsonToRule(_).getOrElse(throw FailedToParseAmlRule())))
     } yield new AmlRuleChecker[F](xa, parsed)
   }
 

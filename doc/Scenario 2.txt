@@ -1,3 +1,3 @@
 
-{ "OurIBAN": "AT611904300234573201","TheirIBAN": "FR4420241010050500014", "Reference": "5", "BookingDateTime": "2021-12-26T14:19:54.736Z", "TransactionCode": "INTT", "DebitCredit": "D", "Amount": 5100.00, "Currency": "EUR", "Description": "Invice nr 1", "CountryCode": "FR"}
-{ "OurIBAN": "AT611904300234573202","TheirIBAN": "FR4420241010050500014", "Reference": "6", "BookingDateTime": "2021-12-27T14:19:54.736Z", "TransactionCode": "INTT", "DebitCredit": "C", "Amount": 5100.00, "Currency": "EUR", "Description": "Invoice nr 5000", "CountryCode": "FR"}
+{ "OurIBAN": "AT611904300234573201","TheirIBAN": "FR4420241010050500014", "Reference": "5", "BookingDateTime": "2021-12-26T14:19:54.736Z", "TransactionCode": "INTT", "DebitCredit": "D", "Amount": 4100.00, "Currency": "EUR", "Description": "Invice nr 1", "CountryCode": "FR"}
+{ "OurIBAN": "AT611904300234573202","TheirIBAN": "FR4420241010050500014", "Reference": "6", "BookingDateTime": "2021-12-27T14:19:54.736Z", "TransactionCode": "INTT", "DebitCredit": "C", "Amount": 6100.00, "Currency": "EUR", "Description": "Invoice nr 5000", "CountryCode": "FR"}

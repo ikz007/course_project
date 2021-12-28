@@ -8,7 +8,7 @@ INSERT INTO Customer VALUES ('000001', 'Test Customer 1', null, 30000, 'Active',
 ('000003', 'Test Customer 3', null, 100000, 'Active', '1970-07-04', 1, 'DE', 'DE');
 
 INSERT INTO Questionnaire VALUES ('1', '000001', 'FR', 10000, 13000, 'Relatives', 1),
-('2', '000002', 'AF', 100000, 1200000, 'Business', 0);
+('2', '000002', 'AF', 100000, 1200000, 'Business', 1);
 
 INSERT INTO Relationship VALUES ('1', '000001', 'AT611904300234573201', '2020-02-20', '9999-01-01'),
 ('2', '000001', 'AT611904300234573202', '2020-03-20', '9999-01-01'),

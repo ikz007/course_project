@@ -77,7 +77,7 @@ object Main extends IOApp{
       _ <- logger.info("Server starting...")
       config <- Config.load[IO]()
       xa <- IO.delay(Database.buildTransactor[IO](Database.TransactorConfig(config.db)))
-    //  _ <- DbInit.initialize[IO](xa)
+      _ <- DbInit.initialize[IO](xa)
       amlRuleChecker <- AmlRuleChecker[IO](xa)
       kafkaErrProducer <- IO.delay(KafkaErrProduce[IO](config.kafka))
       _ <- new TransactionTopicSubscriber[IO](xa, config.kafka, kafkaErrProducer, amlRuleChecker).subscribe2.start

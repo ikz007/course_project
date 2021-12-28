@@ -1,8 +1,8 @@
 package lv.scala.aml.common.dto
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, ValidatedNel}
-import cats.implicits.{catsSyntaxOptionId, catsSyntaxTuple7Semigroupal, catsSyntaxValidatedId}
+import cats.data.Validated.Valid
+import cats.data.ValidatedNel
+import cats.implicits.{catsSyntaxOptionId, catsSyntaxTuple7Semigroupal, catsSyntaxTuple8Semigroupal, catsSyntaxValidatedId}
 import io.circe._
 import io.circe.generic.semiauto._
 import lv.scala.aml.common.dto.responses.ParsingError
@@ -15,9 +15,9 @@ final case class Transaction (
   OurIBAN: IBAN,
   TheirIBAN: IBAN,
   Reference: String,
-  TransactionCode: String,
+  TransactionCode: TransactionCode,
   BookingDateTime: LocalDate,
-  DebitCredit: String,
+  DebitCredit: TransactionType,
   Amount: BigDecimal,
   Currency: String,
   Description: Option[String],
@@ -30,12 +30,12 @@ object Transaction {
   private type ErrorsOr[T] = ValidatedNel[ParsingError, T]
 
   def apply(nVTransaction: NotValidatedTransaction): ValidatedNel[ParsingError, Transaction] = {
-    val validateDebitCredit: ErrorsOr[String] =
-      if (nVTransaction.DebitCredit != "C" || nVTransaction.DebitCredit != "D") {
-        Valid(nVTransaction.DebitCredit)
-      } else {
-        ParsingError("DebitCredit", InvalidFormatProvided).invalidNel
+    val validateDebitCredit: ErrorsOr[TransactionType] = {
+      TransactionType.withValueOpt(nVTransaction.DebitCredit) match {
+        case Some(value) => Valid(value)
+        case None => ParsingError("DebitCredit", InvalidFormatProvided).invalidNel
       }
+    }
 
     val validateCurrency: ErrorsOr[String] =
       if(nVTransaction.Currency.matches("^[a-zA-Z]{3}$")) {
@@ -68,20 +68,27 @@ object Transaction {
         case None => ParsingError("BookingDateTime", InvalidFormatProvided).invalidNel
       }
 
+    val validateTransactionCode: ErrorsOr[TransactionCode] =
+      TransactionCode.withValueOpt(nVTransaction.TransactionCode) match {
+        case Some(value) => Valid(value)
+        case None => ParsingError("TransactionCode", InvalidFormatProvided).invalidNel
+      }
+
     (
       IBANHandler.validate(nVTransaction.OurIBAN),
       IBANHandler.validate(nVTransaction.TheirIBAN),
       validateReference,
       validateCurrency,
       validateCountryCode,
+      validateTransactionCode,
       validateDate,
       validateDebitCredit).mapN{
-      case ( ourIban, theirIban, reference, currency, countryCode, trnsDate, debitCredit) =>
+      case ( ourIban, theirIban, reference, currency, countryCode, trnsCode, trnsDate, debitCredit) =>
         Transaction(
           ourIban,
           theirIban,
           reference,
-          nVTransaction.TransactionCode,
+          trnsCode,
           trnsDate,
           debitCredit,
           nVTransaction.Amount,

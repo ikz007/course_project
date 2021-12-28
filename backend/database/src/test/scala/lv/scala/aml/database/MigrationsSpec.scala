@@ -1,15 +1,11 @@
 package lv.scala.aml.database
 
 import doobie.implicits._
-import doobie.util.meta.Meta
-import lv.scala.aml.common.dto.{Account, Alert, Country, Customer, IBAN, Relationship, Transaction}
-
-import java.time.LocalDate
+import lv.scala.aml.common.dto._
 /*
 Type checking tables
  */
-class MigrationsSpec extends DatabaseSpec {
-  implicit val InstantMeta: Meta[LocalDate] = Meta[String].imap(LocalDate.parse)(_.toString)
+class MigrationsSpec extends DatabaseSpec with DoobieSchema {
   "Flyway migrations" should {
     "create the country table" in {
       check(
@@ -52,6 +48,10 @@ class MigrationsSpec extends DatabaseSpec {
         sql"""SELECT * FROM Relationship""".query[Relationship]
       )
     }
-
+    "create the rules table" in {
+      check(
+        sql"""SELECT * FROM RuleTable""".query[(Int, String)]
+      )
+    }
   }
 }

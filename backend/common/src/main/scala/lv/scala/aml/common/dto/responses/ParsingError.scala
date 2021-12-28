@@ -14,6 +14,6 @@ object ParsingError {
   implicit val showParsingError: Show[ParsingError] = Show.show{
     case ParsingError(field, NotProvidedOrEmpty) => s"Field `$field` was not provided or empty"
     case ParsingError(field, InvalidFormatProvided) => s"Format of the field `$field` is invalid"
-    case ParsingError(field, FailedToParseJson) => s"Failed to parse object"
+    case ParsingError(_, FailedToParseJson) => s"Failed to parse object"
   }
 }

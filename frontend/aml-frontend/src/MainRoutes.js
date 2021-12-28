@@ -11,6 +11,7 @@ import Accounts from "./views/Accounts";
 import Account from "./views/Account";
 import Quests from "./views/Quests";
 import Quest from "./views/Quest";
+import Conf from "./views/Conf";
 const MainRoutes = {
     path: '/',
     element: <Layout/>,
@@ -55,6 +56,10 @@ const MainRoutes = {
             path: '/quests/:id',
             element: <Quest/>
         },
+        {
+            path: '/confetti',
+            element: <Conf/>
+        }
     ]
 }
 

@@ -7,10 +7,9 @@ import doobie.Update
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import doobie.util.meta.Meta
-
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import lv.scala.aml.common.dto.Transaction
+import lv.scala.aml.common.dto.{Transaction, TransactionCode}
 import lv.scala.aml.common.dto.parser.TransactionParser
 import lv.scala.aml.config.KafkaConfig
 import lv.scala.aml.database.utils.AmlRuleChecker
@@ -23,10 +22,9 @@ class TransactionTopicSubscriber[F[_]: Sync: Logger: ContextShift: ConcurrentEff
   kafkaConfig: KafkaConfig,
   kafkaErrProduce: KafkaErrProduce[F],
   amlRuleChecker: AmlRuleChecker[F]
-) {
+) extends DoobieSchema {
 
   private val logger = Slf4jLogger.getLogger[F]
-  implicit val InstantMeta: Meta[LocalDate] = Meta[String].imap(LocalDate.parse)(_.toString)
 
   def subscribe2: F[Unit] = {
     KafkaReceiver.create[F](kafkaConfig)(
